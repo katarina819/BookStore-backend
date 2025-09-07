@@ -1,4 +1,3 @@
-# views.py
 from rest_framework import generics, permissions
 from .models import Requests, Response, RelocationRequest, TimeRequest
 from .serializers import RequestSerializer, RelocationRequestSerializer, TimeRequestSerializer
@@ -8,7 +7,7 @@ from .serializers import ResponseSerializer
 class PublicRequestCreateView(generics.CreateAPIView):
     queryset = Requests.objects.all()
     serializer_class = RequestSerializer
-    permission_classes = [AllowAny]  # javni endpoint, ne treba login
+    permission_classes = [AllowAny]
 
 
 class ResponseCreateView(generics.CreateAPIView):

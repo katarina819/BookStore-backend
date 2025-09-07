@@ -1,15 +1,14 @@
-import os
 from pathlib import Path
 
-# Osnovni direktorij projekta
+
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-# Sigurnost
+
 SECRET_KEY = 'zr9&f55!tg^zvq2)3n#1s^i14myb32odpd&_tw0adj@q+!=m_3'
 DEBUG = True
 ALLOWED_HOSTS = ['localhost', '127.0.0.1']
 
-# Aplikacije
+
 INSTALLED_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',
@@ -19,13 +18,13 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'corsheaders',
     'rest_framework',
-    'requests_app',  # tvoja app
+    'requests_app',
 ]
 
-# Middleware
+
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
-    'corsheaders.middleware.CorsMiddleware',   # 👈 ovo ide odmah iza SecurityMiddleware
+    'corsheaders.middleware.CorsMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -36,12 +35,12 @@ MIDDLEWARE = [
 
 
 CORS_ALLOWED_ORIGINS = [
-    "http://localhost:20281",  # Angular frontend
+    "http://localhost:20281",
 ]
 
 ROOT_URLCONF = 'backend.urls'
 
-# Templates
+
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
@@ -60,21 +59,20 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'backend.wsgi.application'
 
-# Baza podataka (koristi SQLite za lokalno testiranje)
-# Baza podataka (PostgreSQL)
+
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'bookstay',          # ime tvoje baze
-        'USER': 'postgres',     # korisnik baze
-        'PASSWORD': '1234',  # lozinka korisnika
-        'HOST': 'localhost',          # ili IP servera baze
-        'PORT': '5432',               # default port PostgreSQL
+        'NAME': 'bookstay',
+        'USER': 'postgres',
+        'PASSWORD': '1234',
+        'HOST': 'localhost',
+        'PORT': '5432',
     }
 }
 
 
-# Password validation
+
 AUTH_PASSWORD_VALIDATORS = [
     {'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator'},
     {'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator'},
@@ -82,16 +80,16 @@ AUTH_PASSWORD_VALIDATORS = [
     {'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator'},
 ]
 
-# Internacionalizacija
+
 LANGUAGE_CODE = 'en-us'
 TIME_ZONE = 'Europe/Zagreb'
 USE_I18N = True
 USE_TZ = True
 
-# Staticki fajlovi
+
 STATIC_URL = '/static/'
 
-# Django REST Framework + JWT
+
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'rest_framework_simplejwt.authentication.JWTAuthentication',
