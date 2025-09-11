@@ -27,6 +27,7 @@ class Requests(models.Model):
     employed = models.BooleanField(default=False)
     criminal = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
+    status = models.CharField(max_length=50, default="pending")
 
     def __str__(self):
         return f"{self.name} {self.surname}"
@@ -101,11 +102,12 @@ class Offer(models.Model):
 
 class OfferImage(models.Model):
     offer = models.ForeignKey(Offer, on_delete=models.CASCADE, related_name='images')
-    image_url = models.CharField(max_length=500)
+    image = models.ImageField(upload_to='offer_images/')
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
         db_table = 'offer_images'
+
 
 
 class Response(models.Model):
