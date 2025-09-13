@@ -74,7 +74,14 @@ class OfferSerializer(serializers.ModelSerializer):
 class OfferImageSerializer(serializers.ModelSerializer):
     class Meta:
         model = OfferImage
-        fields = ['id', 'offer', 'image', 'created_at']
+        fields = ['id', 'offer', 'image', 'image_url', 'created_at']
+
+    def validate_offer(self, value):
+        # Provjeri da offer postoji
+        if not Offer.objects.filter(id=value.id).exists():
+            raise serializers.ValidationError("Offer with this ID does not exist.")
+        return value
+
 
 
 class AdminLoginSerializer(serializers.Serializer):

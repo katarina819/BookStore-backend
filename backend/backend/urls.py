@@ -1,5 +1,5 @@
 from django.urls import path
-from requests_app.views import ResponseCreateView
+from requests_app.views import ResponseCreateView, OfferCreateView
 from requests_app import urls as requests_urls
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 from django.http import JsonResponse
@@ -25,6 +25,7 @@ urlpatterns = [
     path("api/token/refresh/", TokenRefreshView.as_view(), name="token_refresh"),
     path('api/admin/login/', AdminLoginView.as_view(), name='admin-login'),
     path('api/admin/token/refresh/', TokenRefreshView.as_view(), name='admin_token_refresh'),
+    path("api/offers/", OfferCreateView.as_view(), name="offer-create"),
 ]
 
 if settings.DEBUG:

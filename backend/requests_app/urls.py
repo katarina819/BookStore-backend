@@ -1,7 +1,7 @@
 from django.urls import path
 from .views import (
     PublicRequestCreateView, RequestsListView, RelocationRequestCreateView, TimeRequestCreateView,
-    UserLoginViaRequestView, UserRequestsView, RequestDetailView, OfferImageCreateView
+    UserLoginViaRequestView, UserRequestsView, RequestDetailView, OfferImageCreateView, OfferCreateView, OfferWithImagesCreateView
 )
 
 urlpatterns = [
@@ -13,5 +13,7 @@ urlpatterns = [
     path('user/requests/', UserRequestsView.as_view(), name='user-requests'),
     path("<int:pk>/", RequestDetailView.as_view(), name="request-detail"),
     path("offer-images/", OfferImageCreateView.as_view(), name="offer-image-create"),
+    path("offers/", OfferCreateView.as_view(), name="offer-create"),
+    path("offers/with-images/", OfferWithImagesCreateView.as_view(), name="offer-with-images-create"),
 ]
 

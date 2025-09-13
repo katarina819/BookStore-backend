@@ -6,7 +6,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 SECRET_KEY = 'zr9&f55!tg^zvq2)3n#1s^i14myb32odpd&_tw0adj@q+!=m_3'
 DEBUG = True
-ALLOWED_HOSTS = ['localhost', '127.0.0.1']
+ALLOWED_HOSTS = ['localhost', '127.0.0.1',  "*"]
 
 
 INSTALLED_APPS = [
@@ -35,7 +35,7 @@ MIDDLEWARE = [
 
 
 CORS_ALLOWED_ORIGINS = [
-    "http://localhost:10768",
+    "http://localhost:47699",
 ]
 
 ROOT_URLCONF = 'backend.urls'

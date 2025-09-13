@@ -22,6 +22,9 @@ import jwt
 from django.conf import settings
 from .serializers import AdminLoginSerializer
 from rest_framework.exceptions import AuthenticationFailed
+from rest_framework.parsers import MultiPartParser, FormParser
+from .models import Offer
+
 # -----------------------------
 # Public endpoints (no auth)
 # -----------------------------
@@ -94,6 +97,16 @@ class OfferImageCreateView(generics.CreateAPIView):
     serializer_class = OfferImageSerializer
     permission_classes = [IsAdminUser]
     authentication_classes = [JWTAuthentication]
+    parser_classes = [MultiPartParser, FormParser]
+
+    def perform_create(self, serializer):
+        offer_id = self.request.data.get("offer")
+        offer = Offer.objects.get(id=offer_id)
+        # Ako dolazi fajl, spremi ga; ako dolazi URL, spremi URL
+        image_file = self.request.data.get("image")
+        image_url = self.request.data.get("image_url")
+        serializer.save(offer=offer, image=image_file, image_url=image_url)
+
 
 
 
@@ -209,3 +222,48 @@ class RequestDetailView(generics.RetrieveAPIView):
     authentication_classes = [JWTAuthentication]
 
 
+class OfferWithImagesCreateView(APIView):
+    permission_classes = [permissions.IsAdminUser]
+    authentication_classes = [JWTAuthentication]
+    parser_classes = [MultiPartParser, FormParser]
+
+    def post(self, request, *args, **kwargs):
+        # 1. prvo kreiramo Offer
+        offer_data = {
+            "request": request.data.get("request"),
+            "type": request.data.get("type"),
+            "city": request.data.get("city"),
+            "address": request.data.get("address"),
+            "price": request.data.get("price"),
+            "description": request.data.get("description"),
+        }
+
+        offer_serializer = OfferSerializer(data=offer_data)
+        if not offer_serializer.is_valid():
+            return Response(offer_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        offer = offer_serializer.save()
+
+        # 2. Označi request kao riješen
+        req = Requests.objects.get(id=offer_data["request"])
+        req.status = "resolved"
+        req.save()
+
+        # 2. dodaj sve slike koje dolaze pod "images"
+        images = request.FILES.getlist("images")  # <--- OVDE PRIMIŠ SVE FAJLOVE
+        image_objs = []
+        for img in images:
+            image_serializer = OfferImageSerializer(data={"offer": offer.id, "image": img})
+            if image_serializer.is_valid():
+                image_obj = image_serializer.save()
+                image_objs.append(image_obj)
+            else:
+                # ako neka slika faila, obriši offer da ne ostane polovično
+                offer.delete()
+                return Response(image_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        # 3. vrati offer zajedno sa svim slikama
+        return Response({
+            "offer": OfferSerializer(offer).data,
+            "images": OfferImageSerializer(image_objs, many=True).data
+        }, status=status.HTTP_201_CREATED)
