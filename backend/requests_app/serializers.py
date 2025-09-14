@@ -65,22 +65,31 @@ class TimeRequestSerializer(serializers.ModelSerializer):
 
 
 
-class OfferSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Offer
-        fields = "__all__"
-
-
 class OfferImageSerializer(serializers.ModelSerializer):
+    full_image_url = serializers.SerializerMethodField()
+
     class Meta:
         model = OfferImage
-        fields = ['id', 'offer', 'image', 'image_url', 'created_at']
+        fields = ['id', 'image', 'image_url', 'full_image_url', 'created_at']
 
-    def validate_offer(self, value):
-        # Provjeri da offer postoji
-        if not Offer.objects.filter(id=value.id).exists():
-            raise serializers.ValidationError("Offer with this ID does not exist.")
-        return value
+    def get_full_image_url(self, obj):
+        request = self.context.get('request')
+        if obj.image:
+            # puni URL za fajl sa servera
+            return request.build_absolute_uri(obj.image.url) if request else obj.image.url
+        elif obj.image_url:
+            # ako je unesena direktna URL adresa
+            return obj.image_url
+        return None
+
+
+class OfferSerializer(serializers.ModelSerializer):
+    images = OfferImageSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = Offer
+        fields = ['id', 'request', 'type', 'city', 'address', 'price', 'description', 'created_at', 'images']
+
 
 
 

@@ -131,3 +131,23 @@ class Response(models.Model):
 
     class Meta:
         db_table = 'response'
+
+
+
+class RequestUser(models.Model):
+    request = models.OneToOneField('Requests', on_delete=models.CASCADE, related_name='user_profile')
+    email = models.CharField(max_length=150)
+    name = models.CharField(max_length=100)
+    surname = models.CharField(max_length=100)
+
+    def __str__(self):
+        return f"{self.name} {self.surname}"
+
+    @property
+    def is_authenticated(self):
+        return True  # ovo je ključno za DRF IsAuthenticated permission
+
+    class Meta:
+        db_table = 'requests_app_requestuser'
+
+
