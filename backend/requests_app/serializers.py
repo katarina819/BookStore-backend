@@ -7,6 +7,7 @@ from django.contrib.auth.hashers import check_password
 from django.contrib.auth.models import User
 from django.contrib.auth.models import AnonymousUser
 from rest_framework_simplejwt.tokens import RefreshToken
+from django.conf import settings
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -70,25 +71,39 @@ class OfferImageSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = OfferImage
-        fields = ['id', 'image', 'image_url', 'full_image_url', 'created_at']
+        fields = ['offer', 'image_url', 'image', 'full_image_url']  # <-- dodaj 'offer'
+        extra_kwargs = {
+            'offer': {'required': True},  # osiguraj da ne može biti null
+        }
 
     def get_full_image_url(self, obj):
-        request = self.context.get('request')
+        request = self.context.get('request', None)
         if obj.image:
-            # puni URL za fajl sa servera
-            return request.build_absolute_uri(obj.image.url) if request else obj.image.url
+            if request:
+                return request.build_absolute_uri(obj.image.url)
+            return settings.MEDIA_URL + str(obj.image)
         elif obj.image_url:
-            # ako je unesena direktna URL adresa
             return obj.image_url
-        return None
+        return ''
+
+
+
+
 
 
 class OfferSerializer(serializers.ModelSerializer):
     images = OfferImageSerializer(many=True, read_only=True)
+    request = serializers.PrimaryKeyRelatedField(
+        queryset=Requests.objects.all(), write_only=True
+    )
 
     class Meta:
         model = Offer
-        fields = ['id', 'request', 'type', 'city', 'address', 'price', 'description', 'created_at', 'images']
+        fields = [
+            'id', 'request', 'type', 'city', 'address',
+            'price', 'description', 'images'
+        ]
+
 
 
 
@@ -139,6 +154,12 @@ class RequestDetailSerializer(serializers.ModelSerializer):
             'responses',
             'offers',
         ]
+
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        if 'request' in self.context:
+            context['request'] = self.context['request']  # važno za OfferImageSerializer
+        return context
 
 
 

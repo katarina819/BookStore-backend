@@ -102,8 +102,8 @@ class Offer(models.Model):
 
 class OfferImage(models.Model):
     offer = models.ForeignKey(Offer, on_delete=models.CASCADE, related_name='images')
-    image_url = models.CharField(max_length=500, blank=True, null=True)  # može URL
-    image = models.ImageField(upload_to='offer_images/', blank=True, null=True)  # može fajl
+    image = models.ImageField(upload_to='offer_images/')
+    image_url = models.URLField(blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:

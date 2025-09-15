@@ -97,6 +97,14 @@ class OfferCreateView(generics.CreateAPIView):
     permission_classes = [IsAdminUser]
     authentication_classes = [JWTAuthentication]
 
+    def perform_create(self, serializer):
+        offer = serializer.save()
+        # postavi status requesta na resolved
+        request_obj = offer.request
+        request_obj.status = "resolved"
+        request_obj.save()
+
+
 
 class OfferImageCreateView(generics.CreateAPIView):
     serializer_class = OfferImageSerializer
@@ -106,14 +114,62 @@ class OfferImageCreateView(generics.CreateAPIView):
 
     def perform_create(self, serializer):
         offer_id = self.request.data.get("offer")
-        offer = Offer.objects.get(id=offer_id)
-        # Ako dolazi fajl, spremi ga; ako dolazi URL, spremi URL
-        image_file = self.request.data.get("image")
-        image_url = self.request.data.get("image_url")
-        serializer.save(offer=offer, image=image_file, image_url=image_url)
+        request_id = self.request.data.get("request")
 
+        if not offer_id and not request_id:
+            from rest_framework.exceptions import ValidationError
+            raise ValidationError({"request": "Request ID is required when offer is not provided."})
 
+        # Ako je offer već postojeć
+        if offer_id:
+            try:
+                offer = Offer.objects.get(id=offer_id)
+            except Offer.DoesNotExist:
+                from rest_framework.exceptions import ValidationError
+                raise ValidationError({"offer": "Offer with this ID does not exist."})
+        else:
+            # Kreiraj novi offer obavezno vezan uz request
+            try:
+                request_obj = Requests.objects.get(id=request_id)
+            except Requests.DoesNotExist:
+                from rest_framework.exceptions import ValidationError
+                raise ValidationError({"request": "Request with this ID does not exist."})
 
+            offer_data = {
+                "request": request_obj.id,   # uvijek ID, ne instanca!
+                "type": self.request.data.get("type", "Apartment"),
+                "city": self.request.data.get("city", ""),
+                "address": self.request.data.get("address", ""),
+                "price": self.request.data.get("price", 0),
+                "description": self.request.data.get("description", ""),
+            }
+
+            offer_serializer = OfferSerializer(data=offer_data)
+            offer_serializer.is_valid(raise_exception=True)
+            offer = offer_serializer.save()
+
+            # Označi request kao resolved
+            request_obj.status = "resolved"
+            request_obj.save()
+
+        # Upload slika
+        images = self.request.FILES.getlist("images")
+        image_objs = []
+        for img in images:
+            image_serializer = OfferImageSerializer(data={"offer": offer.id, "image": img})
+            image_serializer.is_valid(raise_exception=True)
+            image_obj = image_serializer.save()
+            image_objs.append(image_obj)
+
+        self.image_objs = image_objs
+        self.offer_instance = offer
+
+    def create(self, request, *args, **kwargs):
+        self.perform_create(None)  # serializer nije potreban jer ručno radimo validaciju
+        return Response({
+            "offer": OfferSerializer(self.offer_instance, context={"request": request}).data,
+            "images": OfferImageSerializer(self.image_objs, many=True, context={"request": request}).data
+        }, status=status.HTTP_201_CREATED)
 
 # -----------------------------
 # Admin login via SimpleJWT
@@ -171,6 +227,10 @@ class AdminTokenObtainPairView(TokenObtainPairView):
 # User endpoints (login via request)
 # -----------------------------
 class UserLoginViaRequestView(APIView):
+    """
+    Omogućava korisniku da se prijavi koristeći email, ime i prezime.
+    Automatski kreira RequestUser i povezuje ga s pripadajućim Requestom.
+    """
     permission_classes = []
 
     def post(self, request):
@@ -181,15 +241,23 @@ class UserLoginViaRequestView(APIView):
         if not email or not name or not surname:
             return Response({"error": "All fields are required"}, status=400)
 
-        user_requests = Requests.objects.filter(email=email, name=name, surname=surname)
-        if not user_requests.exists():
-            return Response({"error": "No requests found"}, status=401)
+        # Dohvati postojeći request
+        try:
+            request_obj = Requests.objects.get(email=email, name=name, surname=surname)
+        except Requests.DoesNotExist:
+            return Response({"error": "No matching request found"}, status=401)
 
+        # Kreiraj ili dohvatiti RequestUser povezan s tim requestom
         request_user_obj, created = RequestUser.objects.get_or_create(
-            request=user_requests.first(),
-            defaults={"email": email, "name": name, "surname": surname}
+            request=request_obj,
+            defaults={
+                "email": email,
+                "name": name,
+                "surname": surname
+            }
         )
 
+        # Generiraj JWT token
         refresh = RefreshToken.for_user(request_user_obj)
         refresh["email"] = email
         refresh["name"] = name
@@ -199,9 +267,13 @@ class UserLoginViaRequestView(APIView):
         return Response({
             "refresh": str(refresh),
             "access": str(refresh.access_token),
-            "user": {"email": email, "name": name, "surname": surname}
-        })
-
+            "user": {
+                "id": request_user_obj.id,
+                "email": email,
+                "name": name,
+                "surname": surname
+            }
+        }, status=status.HTTP_200_OK)
 
 class UserRequestsView(APIView):
     """
@@ -212,22 +284,23 @@ class UserRequestsView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        req_user = request.user
+        req_user = request.user  # ovo je RequestUser instance
+
+        # Dohvati request povezan s korisnikom
+        try:
+            user_request = req_user.request  # OneToOneField "request" iz RequestUser
+        except Requests.DoesNotExist:
+            return Response({"error": "No request associated with this user"}, status=404)
 
         # Prefetch povezanih podataka
-        user_requests = Requests.objects.filter(
-            email=req_user.email,
-            name=req_user.name,
-            surname=req_user.surname
-        ).prefetch_related(
+        user_request_qs = Requests.objects.filter(id=user_request.id).prefetch_related(
             'relocations',
             'time_requests',
             'responses__admin',
             'offers__images'
         )
 
-        # Serializer automatski uključuje sve polja iz Offer i OfferImage
-        serializer = RequestDetailSerializer(user_requests, many=True, context={'request': request})
+        serializer = RequestDetailSerializer(user_request_qs, many=True, context={'request': request})
         data = serializer.data
 
         # Dodaj user-friendly poruke statusa
@@ -237,10 +310,9 @@ class UserRequestsView(APIView):
             elif item['status'] == 'responded':
                 item['message'] = "Admin je odgovorio, ali ponude još nisu dostupne."
             elif item['status'] == 'resolved':
-                item['message'] = None  # ili možeš staviti npr. "Ponude su dostupne"
-                # offer['images'] sada već imaju full_image_url iz OfferImageSerializer
+                item['message'] = "Ponude su dostupne."
 
-        return Response(data)
+        return Response(data, status=200)
 
 
 class RequestDetailView(generics.RetrieveAPIView):
@@ -253,47 +325,51 @@ class RequestDetailView(generics.RetrieveAPIView):
 
 
 class OfferWithImagesCreateView(APIView):
-    permission_classes = [permissions.IsAdminUser]
+    permission_classes = [IsAdminUser]
     authentication_classes = [JWTAuthentication]
     parser_classes = [MultiPartParser, FormParser]
 
     def post(self, request, *args, **kwargs):
-        # 1. prvo kreiramo Offer
-        offer_data = {
-            "request": request.data.get("request"),
-            "type": request.data.get("type"),
-            "city": request.data.get("city"),
-            "address": request.data.get("address"),
-            "price": request.data.get("price"),
-            "description": request.data.get("description"),
-        }
+        request_id = request.data.get("request")
+        if not request_id:
+            return Response({"error": "Request ID is required"}, status=status.HTTP_400_BAD_REQUEST)
 
-        offer_serializer = OfferSerializer(data=offer_data)
-        if not offer_serializer.is_valid():
-            return Response(offer_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        try:
+            req = Requests.objects.get(id=request_id)
+        except Requests.DoesNotExist:
+            return Response({"error": "Request with this ID does not exist"}, status=status.HTTP_404_NOT_FOUND)
 
-        offer = offer_serializer.save()
+        # --- 1. Provjeri postoji li ponuda za ovaj request ---
+        offer = Offer.objects.filter(request=req).first()
+        if not offer:
+            # Ako ne postoji, kreiraj novu ponudu
+            offer_data = {
+                "request": req.id,
+                "type": request.data.get("type"),
+                "city": request.data.get("city"),
+                "address": request.data.get("address"),
+                "price": request.data.get("price"),
+                "description": request.data.get("description"),
+            }
+            offer_serializer = OfferSerializer(data=offer_data)
+            offer_serializer.is_valid(raise_exception=True)
+            offer = offer_serializer.save()
 
-        # 2. Označi request kao riješen
-        req = Requests.objects.get(id=offer_data["request"])
-        req.status = "resolved"
-        req.save()
+            # Označi request kao riješen
+            req.status = "resolved"
+            req.save()
 
-        # 2. dodaj sve slike koje dolaze pod "images"
-        images = request.FILES.getlist("images")  # <--- OVDE PRIMIŠ SVE FAJLOVE
+        # --- 2. Dodaj slike ---
+        images = request.FILES.getlist("images")
         image_objs = []
         for img in images:
             image_serializer = OfferImageSerializer(data={"offer": offer.id, "image": img})
-            if image_serializer.is_valid():
-                image_obj = image_serializer.save()
-                image_objs.append(image_obj)
-            else:
-                # ako neka slika faila, obriši offer da ne ostane polovično
-                offer.delete()
-                return Response(image_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            image_serializer.is_valid(raise_exception=True)
+            image_obj = image_serializer.save()
+            image_objs.append(image_obj)
 
-        # 3. vrati offer zajedno sa svim slikama
+        # --- 3. Vraćanje podataka ---
         return Response({
-            "offer": OfferSerializer(offer).data,
-            "images": OfferImageSerializer(image_objs, many=True).data
+            "offer": OfferSerializer(offer, context={"request": request}).data,
+            "images": OfferImageSerializer(image_objs, many=True, context={"request": request}).data
         }, status=status.HTTP_201_CREATED)
