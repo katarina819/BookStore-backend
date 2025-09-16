@@ -155,6 +155,7 @@ class OfferImageCreateView(generics.CreateAPIView):
 
         # Upload slika
         images = self.request.FILES.getlist("images")
+
         image_objs = []
         for img in images:
             image_serializer = OfferImageSerializer(data={"offer": offer.id, "image": img})
@@ -395,3 +396,10 @@ class UserPayOfferView(APIView):
         )
 
         return DRFResponse({"success": "Payment recorded and admin notified"}, status=status.HTTP_201_CREATED)
+
+
+class AdminRequestDetailView(generics.RetrieveDestroyAPIView):
+    queryset = Requests.objects.all()
+    serializer_class = AdminRequestSerializer
+    permission_classes = [permissions.IsAdminUser]
+    authentication_classes = [JWTAuthentication]
