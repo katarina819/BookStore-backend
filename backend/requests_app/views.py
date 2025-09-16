@@ -20,7 +20,7 @@ from django.contrib.auth.hashers import check_password
 from datetime import datetime, timedelta
 import jwt
 from django.conf import settings
-from .serializers import AdminLoginSerializer
+from .serializers import AdminLoginSerializer, AdminRequestSerializer
 from rest_framework.exceptions import AuthenticationFailed
 from rest_framework.parsers import MultiPartParser, FormParser
 from .models import Offer
@@ -29,6 +29,7 @@ from .models import RequestUser
 from rest_framework.permissions import IsAuthenticated
 from .authentication import RequestUserJWTAuthentication
 from .authentication import OptionalJWTAuthentication
+from rest_framework.response import Response as DRFResponse
 # -----------------------------
 # Public endpoints (no auth)
 # -----------------------------
@@ -64,8 +65,8 @@ class TimeRequestCreateView(generics.CreateAPIView):
 # Admin endpoints
 # -----------------------------
 class RequestsListView(generics.ListAPIView):
-    queryset = Requests.objects.all()
-    serializer_class = RequestSerializer
+    queryset = Requests.objects.all().prefetch_related('responses')
+    serializer_class = AdminRequestSerializer
     permission_classes = [IsAdminUser]
     authentication_classes = [JWTAuthentication]
 
@@ -323,7 +324,6 @@ class RequestDetailView(generics.RetrieveAPIView):
     permission_classes = [permissions.IsAuthenticated, IsAdminUser]
     authentication_classes = [JWTAuthentication]
 
-
 class OfferWithImagesCreateView(APIView):
     permission_classes = [IsAdminUser]
     authentication_classes = [JWTAuthentication]
@@ -339,25 +339,22 @@ class OfferWithImagesCreateView(APIView):
         except Requests.DoesNotExist:
             return Response({"error": "Request with this ID does not exist"}, status=status.HTTP_404_NOT_FOUND)
 
-        # --- 1. Provjeri postoji li ponuda za ovaj request ---
-        offer = Offer.objects.filter(request=req).first()
-        if not offer:
-            # Ako ne postoji, kreiraj novu ponudu
-            offer_data = {
-                "request": req.id,
-                "type": request.data.get("type"),
-                "city": request.data.get("city"),
-                "address": request.data.get("address"),
-                "price": request.data.get("price"),
-                "description": request.data.get("description"),
-            }
-            offer_serializer = OfferSerializer(data=offer_data)
-            offer_serializer.is_valid(raise_exception=True)
-            offer = offer_serializer.save()
+        # --- 1. Kreiraj novu ponudu ---
+        offer_data = {
+            "request": req.id,
+            "type": request.data.get("type"),
+            "city": request.data.get("city"),
+            "address": request.data.get("address"),
+            "price": request.data.get("price"),
+            "description": request.data.get("description"),
+        }
+        offer_serializer = OfferSerializer(data=offer_data)
+        offer_serializer.is_valid(raise_exception=True)
+        offer = offer_serializer.save()
 
-            # Označi request kao riješen
-            req.status = "resolved"
-            req.save()
+        # Označi request kao riješen
+        req.status = "resolved"
+        req.save()
 
         # --- 2. Dodaj slike ---
         images = request.FILES.getlist("images")
@@ -368,8 +365,33 @@ class OfferWithImagesCreateView(APIView):
             image_obj = image_serializer.save()
             image_objs.append(image_obj)
 
-        # --- 3. Vraćanje podataka ---
+        # --- 3. Vrati podatke ---
         return Response({
             "offer": OfferSerializer(offer, context={"request": request}).data,
             "images": OfferImageSerializer(image_objs, many=True, context={"request": request}).data
         }, status=status.HTTP_201_CREATED)
+
+class UserPayOfferView(APIView):
+    authentication_classes = [RequestUserJWTAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        offer_id = request.data.get("offer_id")
+        if not offer_id:
+            return DRFResponse({"error": "Offer ID is required"}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            offer = Offer.objects.get(id=offer_id)
+            request_obj = offer.request
+        except Offer.DoesNotExist:
+            return DRFResponse({"error": "Offer not found"}, status=status.HTTP_404_NOT_FOUND)
+
+        # Kreiraj Response za obavijest
+        ResponseModel.objects.create(
+            request=request_obj,
+            admin=None,
+            message="User has paid this offer!"
+
+        )
+
+        return DRFResponse({"success": "Payment recorded and admin notified"}, status=status.HTTP_201_CREATED)

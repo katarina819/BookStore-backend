@@ -33,10 +33,15 @@ class AdminUserSerializer(serializers.ModelSerializer):
 class ResponseSerializer(serializers.ModelSerializer):
     request = RequestSerializer(read_only=True)
     admin = AdminUserSerializer(read_only=True)
+    message_type = serializers.SerializerMethodField()  # virtualno polje
 
     class Meta:
         model = Response
-        fields = "__all__"
+        fields = ['id', 'request', 'admin', 'message', 'created_at', 'message_type']
+
+    def get_message_type(self, obj):
+        return 'admin' if obj.admin else 'user'
+
 
 
 class RelocationRequestSerializer(serializers.ModelSerializer):
@@ -162,4 +167,9 @@ class RequestDetailSerializer(serializers.ModelSerializer):
         return context
 
 
+class AdminRequestSerializer(serializers.ModelSerializer):
+    responses = ResponseSerializer(many=True, read_only=True)
 
+    class Meta:
+        model = Requests
+        fields = ['id', 'name', 'surname', 'email', 'status', 'responses']

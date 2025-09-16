@@ -1,7 +1,8 @@
 from django.urls import path
 from .views import (
     PublicRequestCreateView, RequestsListView, RelocationRequestCreateView, TimeRequestCreateView,
-    UserLoginViaRequestView, UserRequestsView, RequestDetailView, OfferImageCreateView, OfferCreateView, OfferWithImagesCreateView
+    UserLoginViaRequestView, UserRequestsView, RequestDetailView, OfferImageCreateView, OfferCreateView, OfferWithImagesCreateView,
+    UserPayOfferView,
 
 )
 
@@ -16,6 +17,7 @@ urlpatterns = [
     path("offer-images/", OfferImageCreateView.as_view(), name="offer-image-create"),
     path("offers/", OfferCreateView.as_view(), name="offer-create"),
     path("offers/with-images/", OfferWithImagesCreateView.as_view(), name="offer-with-images-create"),
+    path('users/pay-offer/', UserPayOfferView.as_view(), name='user-pay-offer'),
 
 
 ]

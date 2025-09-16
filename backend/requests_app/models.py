@@ -121,13 +121,18 @@ class Response(models.Model):
     admin = models.ForeignKey(
         'AdminUser',
         on_delete=models.CASCADE,
-        related_name='responses_sent'
+        related_name='responses_sent',
+        null = True,
+        blank = True
     )
     message = models.TextField()
+
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
-        return f"Response by {self.admin} to {self.request}"
+        if self.admin:
+            return f"Response by {self.admin} to {self.request}"
+        return f"Response by User to {self.request}"
 
     class Meta:
         db_table = 'response'
