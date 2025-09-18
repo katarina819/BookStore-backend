@@ -1,5 +1,6 @@
 from pathlib import Path
-
+import os
+import dj_database_url
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -61,14 +62,9 @@ WSGI_APPLICATION = 'backend.wsgi.application'
 
 
 DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'bookstay',
-        'USER': 'postgres',
-        'PASSWORD': '1234',
-        'HOST': 'localhost',
-        'PORT': '5432',
-    }
+    'default': dj_database_url.config(
+        default=os.getenv("DATABASE_URL")
+    )
 }
 
 
