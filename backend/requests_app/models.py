@@ -126,8 +126,6 @@ class OfferImage(models.Model):
         db_table = 'offer_images'
 
 
-
-
 class Response(models.Model):
     request = models.ForeignKey(
         'Requests',
@@ -152,7 +150,6 @@ class Response(models.Model):
 
     class Meta:
         db_table = 'response'
-
 
 
 class RequestUser(models.Model):

@@ -1,4 +1,3 @@
-# requests_app/authentication.py
 from rest_framework_simplejwt.authentication import JWTAuthentication
 from rest_framework import exceptions
 from rest_framework.authentication import BaseAuthentication
@@ -12,11 +11,11 @@ User = get_user_model()
 
 
 # -----------------------------
-# 1️⃣ JWT za RequestUser (korisnika zahtjeva)
+# JWT za RequestUser
 # -----------------------------
 class RequestUserJWTAuthentication(JWTAuthentication):
     def get_user(self, validated_token):
-        user_id = validated_token.get("user_id")  # koristi ID iz tokena
+        user_id = validated_token.get("user_id")
         if not user_id:
             raise exceptions.AuthenticationFailed("Token missing user_id")
 
@@ -28,15 +27,12 @@ class RequestUserJWTAuthentication(JWTAuthentication):
 
 
 # -----------------------------
-# 2️⃣ Optional JWT za javne viewove
+# Optional JWT
 # -----------------------------
 class OptionalJWTAuthentication(BaseAuthentication):
-    """
-    Ignorira JWT ako ga nema (za javne viewove).
-    Ako JWT postoji, možeš ga parsirati (opcionalno)
-    """
+
     def authenticate(self, request):
-        # Ako želiš da OptionalJWT obradi JWT ako postoji, možeš:
+        # If you want OptionalJWT to process the JWT if it exists, you can:
         auth_header = request.headers.get("Authorization")
         if auth_header and auth_header.startswith("Bearer "):
             token = auth_header.split(" ")[1]
@@ -45,8 +41,8 @@ class OptionalJWTAuthentication(BaseAuthentication):
                 user = JWTAuthentication().get_user(validated_token)
                 return (user, validated_token)
             except Exception:
-                return None  # ignorira nevažeći JWT
-        return None  # ako JWT ne postoji, ne baca 401
+                return None  # ignores invalid JWT
+        return None  # if JWT does not exist, it does not throw 401
 
 
 class CustomJWTAuthentication(JWTAuthentication):

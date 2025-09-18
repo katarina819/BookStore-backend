@@ -42,7 +42,6 @@ class AdminUserSerializer(serializers.ModelSerializer):
         fields = ["id", "username", "email"]
 
 
-
 class ResponseSerializer(serializers.ModelSerializer):
     request = RequestSerializer(read_only=True)
     admin = AdminUserSerializer(read_only=True)
@@ -56,7 +55,6 @@ class ResponseSerializer(serializers.ModelSerializer):
         return 'admin' if obj.admin else 'user'
 
 
-
 class RelocationRequestSerializer(serializers.ModelSerializer):
     class Meta:
         model = RelocationRequest
@@ -66,7 +64,6 @@ class RelocationRequestSerializer(serializers.ModelSerializer):
             "req_parking", "req_garage", "req_balcony", "req_terrace",
             "req_shops", "req_center", "req_hospital", "message"
         ]
-
 
 
 class TimeRequestSerializer(serializers.ModelSerializer):

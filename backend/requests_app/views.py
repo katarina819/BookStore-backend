@@ -33,9 +33,8 @@ from .authentication import OptionalJWTAuthentication
 from rest_framework.response import Response as DRFResponse
 from rest_framework_simplejwt.views import TokenViewBase
 from .utils import get_tokens_for_request_user
-# -----------------------------
-# Public endpoints (no auth)
-# -----------------------------
+
+
 class PublicRequestCreateView(generics.CreateAPIView):
     queryset = Requests.objects.all()
     serializer_class = RequestSerializer
@@ -83,7 +82,7 @@ class ResponseCreateView(generics.CreateAPIView):
         req_id = self.request.data.get("request_id")
         request_obj = Requests.objects.get(id=req_id)
 
-        # Dohvati AdminUser instancu
+        # Get AdminUser instance
         user_id = getattr(self.request.user, 'id', None)  # ovo dolazi iz JWT
         try:
             admin_user = AdminUser.objects.get(id=user_id)
@@ -124,7 +123,7 @@ class OfferImageCreateView(generics.CreateAPIView):
             from rest_framework.exceptions import ValidationError
             raise ValidationError({"request": "Request ID is required when offer is not provided."})
 
-        # Ako je offer već postojeć
+        # If the offer already exists
         if offer_id:
             try:
                 offer = Offer.objects.get(id=offer_id)
@@ -152,11 +151,11 @@ class OfferImageCreateView(generics.CreateAPIView):
             offer_serializer.is_valid(raise_exception=True)
             offer = offer_serializer.save()
 
-            # Označi request kao resolved
+            # Mark request as resolved
             request_obj.status = "resolved"
             request_obj.save()
 
-        # Upload slika
+        # Upload image
         images = self.request.FILES.getlist("images")
 
         image_objs = []
@@ -170,7 +169,7 @@ class OfferImageCreateView(generics.CreateAPIView):
         self.offer_instance = offer
 
     def create(self, request, *args, **kwargs):
-        self.perform_create(None)  # serializer nije potreban jer ručno radimo validaciju
+        self.perform_create(None)
         return Response({
             "offer": OfferSerializer(self.offer_instance, context={"request": request}).data,
             "images": OfferImageSerializer(self.image_objs, many=True, context={"request": request}).data
@@ -183,13 +182,13 @@ class AdminTokenObtainPairSerializer(TokenObtainPairSerializer):
     @classmethod
     def get_token(cls, user):
         token = super().get_token(user)
-        # dodaj custom claimove
+        # add custom claims
         token['username'] = user.username
         token['is_admin'] = True
         return token
 
     def validate(self, attrs):
-        email = attrs.get("username")  # SimpleJWT očekuje "username" field
+        email = attrs.get("username")
         password = attrs.get("password")
 
         try:
@@ -200,7 +199,7 @@ class AdminTokenObtainPairSerializer(TokenObtainPairSerializer):
         if not check_password(password, user.password_hash):
             raise Exception("Invalid credentials")
 
-        # hack: SimpleJWT očekuje Django User objekt → kreiramo dummy user
+
         from django.contrib.auth.models import AnonymousUser
         dummy_user = AnonymousUser()
         dummy_user.id = user.id
@@ -247,7 +246,7 @@ class UserLoginViaRequestView(APIView):
         if not check_password(password, request_obj.password):
             return Response({"error": "Invalid credentials"}, status=status.HTTP_401_UNAUTHORIZED)
 
-        # ⚠️ SimpleJWT očekuje Django User model – workaround:
+
         class DummyUser:
             def __init__(self, request_obj):
                 self.id = request_obj.id
@@ -276,16 +275,16 @@ class UserLoginViaRequestView(APIView):
 
 class UserRequestsView(APIView):
     """
-    Dohvat svih requestova za trenutno prijavljenog korisnika.
-    Vraća kompletne podatke: relocations, time_requests, responses, offers + puni URL za slike.
+    Retrieve all requests for the currently logged in user.
+    Returns complete data: relocations, time_requests, responses, offers + full URL for images.
     """
     authentication_classes = [RequestUserJWTAuthentication]
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        user_request = request.user  # ovo je već Requests instance
+        user_request = request.user
 
-        # Prefetch povezanih podataka
+
         user_request_qs = Requests.objects.filter(id=user_request.id).prefetch_related(
             'relocations',
             'time_requests',
@@ -296,14 +295,14 @@ class UserRequestsView(APIView):
         serializer = RequestDetailSerializer(user_request_qs, many=True, context={'request': request})
         data = serializer.data
 
-        # Dodaj user-friendly poruke statusa
+
         for item in data:
             if item['status'] == 'pending':
-                item['message'] = "Vaš zahtjev još nije obrađen od strane admina."
+                item['message'] = "Your request has not yet been processed by the admin."
             elif item['status'] == 'responded':
-                item['message'] = "Admin je odgovorio, ali ponude još nisu dostupne."
+                item['message'] = "Admin has responded, but offers are not yet available."
             elif item['status'] == 'resolved':
-                item['message'] = "Ponude su dostupne."
+                item['message'] = "Offers are available."
 
         return Response(data, status=200)
 
@@ -330,7 +329,7 @@ class OfferWithImagesCreateView(APIView):
         except Requests.DoesNotExist:
             return Response({"error": "Request with this ID does not exist"}, status=status.HTTP_404_NOT_FOUND)
 
-        # --- 1. Kreiraj novu ponudu ---
+        # --- 1. Create new offer ---
         offer_data = {
             "request": req.id,
             "type": request.data.get("type"),
@@ -343,11 +342,11 @@ class OfferWithImagesCreateView(APIView):
         offer_serializer.is_valid(raise_exception=True)
         offer = offer_serializer.save()
 
-        # Označi request kao riješen
+        # Mark the request as solved
         req.status = "resolved"
         req.save()
 
-        # --- 2. Dodaj slike ---
+        # --- 2. Add image ---
         images = request.FILES.getlist("images")
         image_objs = []
         for img in images:
@@ -356,7 +355,7 @@ class OfferWithImagesCreateView(APIView):
             image_obj = image_serializer.save()
             image_objs.append(image_obj)
 
-        # --- 3. Vrati podatke ---
+        # --- 3. Restore data ---
         return Response({
             "offer": OfferSerializer(offer, context={"request": request}).data,
             "images": OfferImageSerializer(image_objs, many=True, context={"request": request}).data
@@ -377,7 +376,7 @@ class UserPayOfferView(APIView):
         except Offer.DoesNotExist:
             return DRFResponse({"error": "Offer not found"}, status=status.HTTP_404_NOT_FOUND)
 
-        # Kreiraj Response za obavijest
+        # Create a Response for the notification
         ResponseModel.objects.create(
             request=request_obj,
             admin=None,
