@@ -11,7 +11,9 @@ from requests_app.views import UserRequestsView, UserLoginViaRequestView
 from requests_app.views import CustomTokenRefreshView
 from django.views.generic import TemplateView
 from django.urls import re_path
-
+from django.views.generic import View
+from django.http import HttpResponse
+import os
 
 
 def root(request):
@@ -39,7 +41,14 @@ urlpatterns = [
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 
+
+class AngularAppView(View):
+    def get(self, request, *args, **kwargs):
+        index_path = os.path.join(settings.BASE_DIR, 'wwwroot', 'index.html')
+        with open(index_path, 'r', encoding='utf-8') as f:
+            return HttpResponse(f.read())
+
 # catch-all ruta za Angular aplikaciju
 urlpatterns += [
-    re_path(r'^.*$', TemplateView.as_view(template_name="index.html")),
+    re_path(r'^.*$', AngularAppView.as_view()),
 ]
