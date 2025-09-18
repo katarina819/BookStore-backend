@@ -14,7 +14,8 @@ from .serializers import (
     ResponseSerializer,
     OfferSerializer,
     OfferImageSerializer,
-    RequestDetailSerializer
+    RequestDetailSerializer,
+    CustomTokenRefreshSerializer
 )
 from django.contrib.auth.hashers import check_password
 from datetime import datetime, timedelta
@@ -30,6 +31,8 @@ from rest_framework.permissions import IsAuthenticated
 from .authentication import RequestUserJWTAuthentication
 from .authentication import OptionalJWTAuthentication
 from rest_framework.response import Response as DRFResponse
+from rest_framework_simplejwt.views import TokenViewBase
+from .utils import get_tokens_for_request_user
 # -----------------------------
 # Public endpoints (no auth)
 # -----------------------------
@@ -229,51 +232,45 @@ class AdminTokenObtainPairView(TokenObtainPairView):
 # User endpoints (login via request)
 # -----------------------------
 class UserLoginViaRequestView(APIView):
-    """
-    Omogućava korisniku da se prijavi koristeći email, ime i prezime.
-    Automatski kreira RequestUser i povezuje ga s pripadajućim Requestom.
-    """
-    permission_classes = []
-
     def post(self, request):
         email = request.data.get("email")
-        name = request.data.get("name")
-        surname = request.data.get("surname")
+        password = request.data.get("password")
 
-        if not email or not name or not surname:
-            return Response({"error": "All fields are required"}, status=400)
+        if not email or not password:
+            return Response({"error": "Email and password required"}, status=status.HTTP_400_BAD_REQUEST)
 
-        # Dohvati postojeći request
         try:
-            request_obj = Requests.objects.get(email=email, name=name, surname=surname)
+            request_obj = Requests.objects.get(email=email)
         except Requests.DoesNotExist:
-            return Response({"error": "No matching request found"}, status=401)
+            return Response({"error": "Invalid credentials"}, status=status.HTTP_401_UNAUTHORIZED)
 
-        # Kreiraj ili dohvatiti RequestUser povezan s tim requestom
-        request_user_obj, created = RequestUser.objects.get_or_create(
-            request=request_obj,
-            defaults={
-                "email": email,
-                "name": name,
-                "surname": surname
-            }
-        )
+        if not check_password(password, request_obj.password):
+            return Response({"error": "Invalid credentials"}, status=status.HTTP_401_UNAUTHORIZED)
 
-        # Generiraj JWT token
-        refresh = RefreshToken.for_user(request_user_obj)
-        refresh["email"] = email
-        refresh["name"] = name
-        refresh["surname"] = surname
+        # ⚠️ SimpleJWT očekuje Django User model – workaround:
+        class DummyUser:
+            def __init__(self, request_obj):
+                self.id = request_obj.id
+                self.pk = request_obj.pk
+                self.is_active = True
+                self.is_authenticated = True
+
+        dummy_user = DummyUser(request_obj)
+
+        refresh = RefreshToken.for_user(dummy_user)
+        refresh["email"] = request_obj.email
+        refresh["name"] = request_obj.name
+        refresh["surname"] = request_obj.surname
         refresh["is_request_user"] = True
 
         return Response({
             "refresh": str(refresh),
             "access": str(refresh.access_token),
             "user": {
-                "id": request_user_obj.id,
-                "email": email,
-                "name": name,
-                "surname": surname
+                "id": request_obj.id,
+                "email": request_obj.email,
+                "name": request_obj.name,
+                "surname": request_obj.surname
             }
         }, status=status.HTTP_200_OK)
 
@@ -286,13 +283,7 @@ class UserRequestsView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        req_user = request.user  # ovo je RequestUser instance
-
-        # Dohvati request povezan s korisnikom
-        try:
-            user_request = req_user.request  # OneToOneField "request" iz RequestUser
-        except Requests.DoesNotExist:
-            return Response({"error": "No request associated with this user"}, status=404)
+        user_request = request.user  # ovo je već Requests instance
 
         # Prefetch povezanih podataka
         user_request_qs = Requests.objects.filter(id=user_request.id).prefetch_related(
@@ -315,7 +306,6 @@ class UserRequestsView(APIView):
                 item['message'] = "Ponude su dostupne."
 
         return Response(data, status=200)
-
 
 class RequestDetailView(generics.RetrieveAPIView):
     queryset = Requests.objects.all().prefetch_related(
@@ -403,3 +393,7 @@ class AdminRequestDetailView(generics.RetrieveDestroyAPIView):
     serializer_class = AdminRequestSerializer
     permission_classes = [permissions.IsAdminUser]
     authentication_classes = [JWTAuthentication]
+
+
+class CustomTokenRefreshView(TokenViewBase):
+    serializer_class = CustomTokenRefreshSerializer

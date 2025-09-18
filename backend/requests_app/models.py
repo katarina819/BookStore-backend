@@ -1,4 +1,6 @@
 from django.db import models
+from django.contrib.auth.hashers import make_password, check_password
+
 
 class AdminUser(models.Model):
     username = models.CharField(max_length=150, unique=True)
@@ -18,6 +20,7 @@ class Requests(models.Model):
     name = models.CharField(max_length=100)
     surname = models.CharField(max_length=100)
     email = models.CharField(max_length=150, unique=True)
+    password = models.CharField(max_length=128, blank=True, null=True)
     contact = models.CharField(max_length=50)
     address = models.CharField(max_length=255)
     residence = models.CharField(max_length=100)
@@ -31,6 +34,19 @@ class Requests(models.Model):
 
     def __str__(self):
         return f"{self.name} {self.surname}"
+
+    def set_password(self, raw_password):
+        """Hashira lozinku i sprema je u model"""
+        self.password = make_password(raw_password)
+        self.save(update_fields=['password'])
+
+    def check_password(self, raw_password):
+        """Provjerava unesenu lozinku s hashiranim passwordom"""
+        return check_password(raw_password, self.password)
+
+    @property
+    def is_authenticated(self):
+        return True
 
     class Meta:
         db_table = 'requests'
@@ -144,6 +160,7 @@ class RequestUser(models.Model):
     email = models.CharField(max_length=150)
     name = models.CharField(max_length=100)
     surname = models.CharField(max_length=100)
+    password = models.CharField(max_length=128)
 
     def __str__(self):
         return f"{self.name} {self.surname}"
@@ -151,6 +168,13 @@ class RequestUser(models.Model):
     @property
     def is_authenticated(self):
         return True  # ovo je ključno za DRF IsAuthenticated permission
+
+    def set_password(self, raw_password):
+        self.password = make_password(raw_password)
+        self.save(update_fields=['password'])
+
+    def check_password(self, raw_password):
+        return check_password(raw_password, self.password)
 
     class Meta:
         db_table = 'requests_app_requestuser'

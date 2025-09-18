@@ -8,7 +8,7 @@ from django.contrib.auth.models import User
 from django.contrib.auth.models import AnonymousUser
 from rest_framework_simplejwt.tokens import RefreshToken
 from django.conf import settings
-
+from rest_framework_simplejwt.serializers import TokenRefreshSerializer
 
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
@@ -17,10 +17,23 @@ class UserSerializer(serializers.ModelSerializer):
 
 class RequestSerializer(serializers.ModelSerializer):
     user = UserSerializer(read_only=True)
+    password = serializers.CharField(write_only=True, required=True)
 
     class Meta:
         model = Requests
         fields = "__all__"
+
+    def create(self, validated_data):
+        raw_password = validated_data.pop("password")
+        instance = super().create(validated_data)
+        instance.set_password(raw_password)  # hashiraj lozinku
+        return instance
+
+    def update(self, instance, validated_data):
+        if "password" in validated_data:
+            raw_password = validated_data.pop("password")
+            instance.set_password(raw_password)
+        return super().update(instance, validated_data)
 
 
 class AdminUserSerializer(serializers.ModelSerializer):
@@ -173,3 +186,23 @@ class AdminRequestSerializer(serializers.ModelSerializer):
     class Meta:
         model = Requests
         fields = ['id', 'name', 'surname', 'email', 'status', 'responses']
+
+
+class CustomTokenRefreshSerializer(TokenRefreshSerializer):
+    def validate(self, attrs):
+        refresh = RefreshToken(attrs['refresh'])
+
+        # napravi novi access token bez traženja Usera
+        data = {'access': str(refresh.access_token)}
+
+        # ako želiš, vrati i user podatke iz claimova
+        data['user'] = {
+            "id": refresh.get("user_id"),
+            "email": refresh.get("email"),
+            "name": refresh.get("name"),
+            "surname": refresh.get("surname"),
+            "is_request_user": refresh.get("is_request_user", False),
+            "is_admin": refresh.get("is_admin", False),
+        }
+
+        return data
