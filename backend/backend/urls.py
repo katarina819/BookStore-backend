@@ -16,17 +16,19 @@ from django.http import HttpResponse
 import os
 
 
-def root(request):
+# API root endpoint (samo kad odeš na /api/, ne na /)
+def api_root(request):
     return JsonResponse({
-        "api_root": "/api/",
         "requests": "/api/requests/",
         "token": "/api/token/",
         "token_refresh": "/api/token/refresh/",
-        "responses": "/api/responses/"
+        "responses": "/api/responses/",
+
     })
 
+
 urlpatterns = [
-    path("", root, name="root"),
+    path("api/", api_root, name="api-root"),
     path("api/requests/", include(requests_urls)),
     path("api/responses/", ResponseCreateView.as_view(), name="response-create"),
     path("api/token/", TokenObtainPairView.as_view(), name="token_obtain_pair"),
@@ -42,13 +44,15 @@ if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 
 
+# Angular SPA view
 class AngularAppView(View):
     def get(self, request, *args, **kwargs):
-        index_path = os.path.join(settings.BASE_DIR, 'wwwroot', 'index.html')
-        with open(index_path, 'r', encoding='utf-8') as f:
+        index_path = os.path.join(settings.BASE_DIR, "wwwroot", "index.html")
+        with open(index_path, "r", encoding="utf-8") as f:
             return HttpResponse(f.read())
 
-# catch-all ruta za Angular aplikaciju
+
+# catch-all za sve ne-API rute
 urlpatterns += [
-    re_path(r'^.*$', AngularAppView.as_view()),
+    re_path(r"^(?!api/).*", AngularAppView.as_view()),
 ]
