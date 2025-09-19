@@ -1,0 +1,18 @@
+<svg id="character" viewBox="0 0 200 300" xmlns="http://www.w3.org/2000/svg">
+  <!-- Tijelo -->
+  <circle id="body" cx="100" cy="150" r="50" fill="#ffcc99"/>
+
+  <!-- Glava -->
+  <circle id="head" cx="100" cy="70" r="30" fill="#ffe0bd"/>
+
+  <!-- Ruke -->
+  <rect id="left-arm" x="50" y="120" width="15" height="60" fill="#ffcc99"/>
+  <rect id="right-arm" x="135" y="120" width="15" height="60" fill="#ffcc99"/>
+
+  <!-- Noge -->
+  <rect id="left-leg" x="75" y="200" width="15" height="60" fill="#ffcc99"/>
+  <rect id="right-leg" x="110" y="200" width="15" height="60" fill="#ffcc99"/>
+
+  <!-- Usta -->
+  <path id="mouth" d="M85,90 Q100,100 115,90" stroke="#000" fill="transparent" stroke-width="2"/>
+</svg>
