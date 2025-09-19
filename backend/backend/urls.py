@@ -16,19 +16,17 @@ from django.http import HttpResponse
 import os
 
 
-# API root endpoint (samo kad odeš na /api/, ne na /)
-def api_root(request):
+def root(request):
     return JsonResponse({
+        "api_root": "/api/",
         "requests": "/api/requests/",
         "token": "/api/token/",
         "token_refresh": "/api/token/refresh/",
-        "responses": "/api/responses/",
-
+        "responses": "/api/responses/"
     })
 
-
 urlpatterns = [
-    path("api/", api_root, name="api-root"),
+    path("", root, name="root"),
     path("api/requests/", include(requests_urls)),
     path("api/responses/", ResponseCreateView.as_view(), name="response-create"),
     path("api/token/", TokenObtainPairView.as_view(), name="token_obtain_pair"),
@@ -40,19 +38,20 @@ urlpatterns = [
     path("api/users/requests/", UserRequestsView.as_view(), name="user-requests"),
 ]
 
+# Serve media during DEBUG
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+    urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
 
 
-# Angular SPA view
+# Angular SPA catch-all (ali ne za API, static ili media)
 class AngularAppView(View):
     def get(self, request, *args, **kwargs):
-        index_path = os.path.join(settings.BASE_DIR, "wwwroot", "browser", "index.html")
-        with open(index_path, "r", encoding="utf-8") as f:
+        index_path = os.path.join(settings.BASE_DIR, 'wwwroot', 'index.html')
+        with open(index_path, 'r', encoding='utf-8') as f:
             return HttpResponse(f.read())
 
 
-# catch-all za sve ne-API rute
 urlpatterns += [
-    re_path(r"^(?!api/).*", AngularAppView.as_view()),
+    re_path(r'^(?!api/|static/|media/).*$', AngularAppView.as_view()),
 ]

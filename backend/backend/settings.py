@@ -86,8 +86,9 @@ USE_TZ = True
 
 STATIC_URL = '/static/'
 STATICFILES_DIRS = [
-    os.path.join(BASE_DIR, 'wwwroot', 'browser'),
+    os.path.join(BASE_DIR, 'wwwroot'),
 ]
+
 
 # Optional: za production, možeš koristiti:
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
