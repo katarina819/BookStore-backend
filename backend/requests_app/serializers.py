@@ -139,7 +139,17 @@ class AdminLoginSerializer(serializers.Serializer):
         if not check_password(password, admin.password_hash):
             raise serializers.ValidationError({"detail": "Invalid credentials"})
 
-        refresh = RefreshToken.for_user(admin)
+        # Dummy user koji SimpleJWT može koristiti
+        class DummyUser:
+            def __init__(self, admin):
+                self.id = admin.id
+                self.username = admin.username
+                self.is_active = True
+                self.is_staff = True
+                self.is_superuser = True
+
+        dummy_user = DummyUser(admin)
+        refresh = RefreshToken.for_user(dummy_user)
 
         return {
             "refresh": str(refresh),
