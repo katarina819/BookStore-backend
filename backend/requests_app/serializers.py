@@ -140,15 +140,19 @@ class AdminLoginSerializer(serializers.Serializer):
             raise serializers.ValidationError({"detail": "Invalid credentials"})
 
         # Dummy user koji SimpleJWT može koristiti
-        class DummyUser:
+        class DummyAdminUser:
             def __init__(self, admin):
                 self.id = admin.id
                 self.username = admin.username
                 self.is_active = True
                 self.is_staff = True
                 self.is_superuser = True
+                self._password_hash = admin.password_hash
 
-        dummy_user = DummyUser(admin)
+            def check_password(self, raw_password):
+                return check_password(raw_password, self._password_hash)
+
+        dummy_user = DummyAdminUser(admin)
         refresh = RefreshToken.for_user(dummy_user)
 
         return {
@@ -161,7 +165,6 @@ class AdminLoginSerializer(serializers.Serializer):
                 "is_admin": True
             }
         }
-
 
 class RequestDetailSerializer(serializers.ModelSerializer):
     relocations = RelocationRequestSerializer(many=True, read_only=True)
