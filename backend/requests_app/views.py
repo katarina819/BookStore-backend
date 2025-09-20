@@ -33,7 +33,7 @@ from .authentication import OptionalJWTAuthentication
 from rest_framework.response import Response as DRFResponse
 from rest_framework_simplejwt.views import TokenViewBase
 from .utils import get_tokens_for_request_user
-
+from django.views.generic import TemplateView
 
 class PublicRequestCreateView(generics.CreateAPIView):
     queryset = Requests.objects.all()
@@ -396,3 +396,7 @@ class AdminRequestDetailView(generics.RetrieveDestroyAPIView):
 
 class CustomTokenRefreshView(TokenViewBase):
     serializer_class = CustomTokenRefreshSerializer
+
+
+class FrontendAppView(TemplateView):
+    template_name = "index.html"

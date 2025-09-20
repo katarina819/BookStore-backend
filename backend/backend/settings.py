@@ -59,6 +59,9 @@ TEMPLATES = [
     },
 ]
 
+# Dodaj ovo odmah nakon TEMPLATES definicije:
+TEMPLATES[0]['DIRS'] = [BASE_DIR / "staticfiles"]  # folder gdje je index.html iz Angular build
+
 WSGI_APPLICATION = 'backend.wsgi.application'
 
 
@@ -85,23 +88,21 @@ USE_TZ = True
 
 
 STATIC_URL = '/static/'
+
+# Angular build folder
 STATICFILES_DIRS = [
-    os.path.join(BASE_DIR, 'wwwroot'),
+    BASE_DIR / "staticfiles",  # ili "static" ako si tako kopirala build
 ]
 
-
-# Optional: za production, možeš koristiti:
-STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+# Za produkciju
+STATIC_ROOT = BASE_DIR / "static"  # gdje collectstatic sprema sve fajlove
 STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
+
 
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
 
-REST_FRAMEWORK = {
-    'DEFAULT_AUTHENTICATION_CLASSES': (
-        'rest_framework_simplejwt.authentication.JWTAuthentication',
-    ),
-}
+
 
 # settings.py
 PASSWORD_HASHERS = [
@@ -112,6 +113,7 @@ PASSWORD_HASHERS = [
 
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": (
+        "rest_framework_simplejwt.authentication.JWTAuthentication",
         "requests_app.authentication.CustomJWTAuthentication",
-    )
+    ),
 }
