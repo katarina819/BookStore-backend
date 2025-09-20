@@ -24,8 +24,8 @@ INSTALLED_APPS = [
 
 
 MIDDLEWARE = [
-    'django.middleware.security.SecurityMiddleware',
     'corsheaders.middleware.CorsMiddleware',
+    'django.middleware.security.SecurityMiddleware',
     'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -38,6 +38,30 @@ MIDDLEWARE = [
 
 CORS_ALLOWED_ORIGINS = [
     "https://bookstay-accommodation.netlify.app",
+    "http://localhost:58304",
+]
+
+CORS_ALLOW_ALL_ORIGINS = True   # za testiranje, kasnije ograniči
+
+CORS_ALLOW_METHODS = [
+    "DELETE",
+    "GET",
+    "OPTIONS",
+    "PATCH",
+    "POST",
+    "PUT",
+]
+
+CORS_ALLOW_HEADERS = [
+    "accept",
+    "accept-encoding",
+    "authorization",
+    "content-type",
+    "dnt",
+    "origin",
+    "user-agent",
+    "x-csrftoken",
+    "x-requested-with",
 ]
 
 ROOT_URLCONF = 'backend.urls'
@@ -70,6 +94,17 @@ DATABASES = {
         default=os.getenv("DATABASE_URL")
     )
 }
+
+# Ako DATABASE_URL nije definiran (npr. lokalno), koristi lokalnu Postgres bazu
+if not DATABASES['default']:
+    DATABASES['default'] = {
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': 'bookstay',     # ime tvoje baze
+        'USER': 'postgres',      # korisnik
+        'PASSWORD': '1234',   # lozinka
+        'HOST': 'localhost',
+        'PORT': '5432',
+    }
 
 
 
