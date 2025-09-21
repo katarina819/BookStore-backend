@@ -16,7 +16,6 @@ from django.http import HttpResponse
 import os
 from requests_app.views import FrontendAppView
 from django.contrib import admin
-from requests_app.views import debug_admin_login
 
 
 def root(request):
@@ -42,7 +41,6 @@ urlpatterns = [
     path("api/offers/", OfferCreateView.as_view(), name="offer-create"),
     path("api/users/login-via-request/", UserLoginViaRequestView.as_view(), name="user-login-via-request"),
     path("api/users/requests/", UserRequestsView.as_view(), name="user-requests"),
-    path('debug-admin-login/', debug_admin_login, name='debug_admin_login'),
 ]
 
 # Serve media & static during DEBUG

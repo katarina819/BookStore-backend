@@ -178,12 +178,47 @@ class OfferImageCreateView(generics.CreateAPIView):
 
 
 class AdminLoginView(APIView):
-    permission_classes = [AllowAny]
-
     def post(self, request):
-        serializer = AdminLoginSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        return Response(serializer.validated_data, status=200)
+        email = request.data.get("email")
+        password = request.data.get("password")
+
+        if not email or not password:
+            return Response({"error": "Email i lozinka su obavezni."}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            user = AdminUser.objects.get(email=email)
+        except AdminUser.DoesNotExist:
+            return Response({"error": "❌ Pogrešan email ili lozinka."}, status=status.HTTP_401_UNAUTHORIZED)
+
+        if not check_password(password, user.password_hash):
+            return Response({"error": "❌ Pogrešan email ili lozinka."}, status=status.HTTP_401_UNAUTHORIZED)
+
+        # Generiranje access tokena (5 minuta)
+        access_payload = {
+            "user_id": user.id,
+            "username": user.username,
+            "exp": datetime.utcnow() + timedelta(minutes=5),
+        }
+        access_token = jwt.encode(access_payload, settings.SECRET_KEY, algorithm="HS256")
+
+        # Generiranje refresh tokena (7 dana)
+        refresh_payload = {
+            "user_id": user.id,
+            "username": user.username,
+            "exp": datetime.utcnow() + timedelta(days=7),
+        }
+        refresh_token = jwt.encode(refresh_payload, settings.SECRET_KEY, algorithm="HS256")
+
+        return Response({
+            "access": access_token,
+            "refresh": refresh_token,
+            "user": {
+                "id": user.id,
+                "email": user.email,
+                "username": user.username,
+                "is_admin": True  # Dodano!
+            }
+        }, status=status.HTTP_200_OK)
 
 
 # -----------------------------
@@ -361,19 +396,16 @@ class FrontendAppView(TemplateView):
     template_name = "index.html"
 
 
+class AdminTokenObtainPairSerializer(TokenObtainPairSerializer):
+    @classmethod
+    def get_token(cls, user):
+        token = super().get_token(user)
+        token['username'] = user.username  # custom claim
+        return token
+
+class AdminTokenObtainPairView(TokenObtainPairView):
+    serializer_class = AdminTokenObtainPairSerializer
 
 
-@api_view(["POST"])
-def debug_admin_login(request):
-    email = request.data.get("email")
-    password = request.data.get("password")
-    try:
-        admin = AdminUser.objects.get(email=email)
-    except AdminUser.DoesNotExist:
-        return Response({"found": False})
-    return Response({
-        "found": True,
-        "check_password": check_password(password, admin.password_hash)
-    })
 
 
