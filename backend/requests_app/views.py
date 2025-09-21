@@ -187,18 +187,22 @@ class AdminLoginView(APIView):
             print("DEBUG: Missing email or password")
             return Response({"error": "Email i lozinka su obavezni."}, status=400)
 
+        print(f"DEBUG: Trying login for {email}")
+
         try:
             user = AdminUser.objects.get(email=email)
             print(f"DEBUG: User found: {user.email}")
         except AdminUser.DoesNotExist:
-            print(f"DEBUG: No user found with email: {email}")
+            print(f"DEBUG: No user found with email {email}")
             return Response({"error": "❌ Pogrešan email ili lozinka."}, status=401)
 
         if not check_password(password, user.password_hash):
-            print(f"DEBUG: Password check failed for {email}")
+            print(f"DEBUG: Password incorrect for {email}")
             return Response({"error": "❌ Pogrešan email ili lozinka."}, status=401)
 
-        print(f"DEBUG: Password check passed for {email}")
+        print(f"DEBUG: Login successful for {email}")
+
+
         # Generiranje access tokena (5 minuta)
         access_payload = {
             "user_id": user.id,
