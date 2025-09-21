@@ -38,7 +38,7 @@ MIDDLEWARE = [
 
 CORS_ALLOWED_ORIGINS = [
     "https://bookstay-accommodation.netlify.app",
-    "http://localhost:58304",
+    "http://localhost:39553",
 ]
 
 
