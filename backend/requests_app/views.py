@@ -182,6 +182,8 @@ class AdminLoginView(APIView):
         email = request.data.get("email")
         password = request.data.get("password")
 
+        print("DEBUG: Received login", email, password)  # DEBUG
+
         if not email or not password:
             return Response({"error": "Email i lozinka su obavezni."}, status=status.HTTP_400_BAD_REQUEST)
 
