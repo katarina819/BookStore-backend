@@ -34,6 +34,8 @@ from rest_framework.response import Response as DRFResponse
 from rest_framework_simplejwt.views import TokenViewBase
 from .utils import get_tokens_for_request_user
 from django.views.generic import TemplateView
+from rest_framework.decorators import api_view
+
 
 class PublicRequestCreateView(generics.CreateAPIView):
     queryset = Requests.objects.all()
@@ -358,3 +360,17 @@ class CustomTokenRefreshView(TokenViewBase):
 
 class FrontendAppView(TemplateView):
     template_name = "index.html"
+
+
+@api_view(["POST"])
+def debug_admin_login(request):
+    email = request.data.get("email")
+    password = request.data.get("password")
+    try:
+        admin = AdminUser.objects.get(email=email)
+    except AdminUser.DoesNotExist:
+        return Response({"found": False})
+    return Response({
+        "found": True,
+        "check_password": check_password(password, admin.password_hash)
+    })
