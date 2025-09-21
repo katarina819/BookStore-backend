@@ -9,6 +9,9 @@ from django.contrib.auth.models import AnonymousUser
 from rest_framework_simplejwt.tokens import RefreshToken
 from django.conf import settings
 from rest_framework_simplejwt.serializers import TokenRefreshSerializer
+from datetime import timedelta
+
+
 
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
@@ -132,13 +135,19 @@ class AdminLoginSerializer(serializers.Serializer):
         if not check_password(password, admin.password_hash):
             raise serializers.ValidationError({"detail": "Invalid credentials"})
 
-        # Generiraj JWT token s is_admin claimom
-        refresh = RefreshToken.for_user(admin)
+        # --- ručno generiranje tokena ---
+        refresh = RefreshToken()
+        refresh.set_exp(lifetime=timedelta(days=7))  # npr. 7 dana
+        refresh["user_id"] = admin.id
         refresh["is_admin"] = True
+
+        access = refresh.access_token
+        access["user_id"] = admin.id
+        access["is_admin"] = True
 
         return {
             "refresh": str(refresh),
-            "access": str(refresh.access_token),
+            "access": str(access),
             "user": {
                 "id": admin.id,
                 "email": admin.email,
@@ -146,6 +155,8 @@ class AdminLoginSerializer(serializers.Serializer):
                 "is_admin": True
             }
         }
+
+
 
 class RequestDetailSerializer(serializers.ModelSerializer):
     relocations = RelocationRequestSerializer(many=True, read_only=True)
