@@ -361,6 +361,8 @@ class FrontendAppView(TemplateView):
     template_name = "index.html"
 
 
+
+
 @api_view(["POST"])
 def debug_admin_login(request):
     email = request.data.get("email")
