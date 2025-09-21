@@ -181,20 +181,24 @@ class AdminLoginView(APIView):
     def post(self, request):
         email = request.data.get("email")
         password = request.data.get("password")
-
-        print("DEBUG: Received login", email, password)  # DEBUG
+        print(f"DEBUG: Received login attempt for {email}")
 
         if not email or not password:
-            return Response({"error": "Email i lozinka su obavezni."}, status=status.HTTP_400_BAD_REQUEST)
+            print("DEBUG: Missing email or password")
+            return Response({"error": "Email i lozinka su obavezni."}, status=400)
 
         try:
             user = AdminUser.objects.get(email=email)
+            print(f"DEBUG: User found: {user.email}")
         except AdminUser.DoesNotExist:
-            return Response({"error": "❌ Pogrešan email ili lozinka."}, status=status.HTTP_401_UNAUTHORIZED)
+            print(f"DEBUG: No user found with email: {email}")
+            return Response({"error": "❌ Pogrešan email ili lozinka."}, status=401)
 
         if not check_password(password, user.password_hash):
-            return Response({"error": "❌ Pogrešan email ili lozinka."}, status=status.HTTP_401_UNAUTHORIZED)
+            print(f"DEBUG: Password check failed for {email}")
+            return Response({"error": "❌ Pogrešan email ili lozinka."}, status=401)
 
+        print(f"DEBUG: Password check passed for {email}")
         # Generiranje access tokena (5 minuta)
         access_payload = {
             "user_id": user.id,
