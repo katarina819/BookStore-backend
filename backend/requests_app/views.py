@@ -175,56 +175,14 @@ class OfferImageCreateView(generics.CreateAPIView):
             "images": OfferImageSerializer(self.image_objs, many=True, context={"request": request}).data
         }, status=status.HTTP_201_CREATED)
 
-# -----------------------------
-# Admin login via SimpleJWT
-# -----------------------------
-class AdminTokenObtainPairSerializer(TokenObtainPairSerializer):
-    @classmethod
-    def get_token(cls, user):
-        token = super().get_token(user)
-        # add custom claims
-        token['username'] = user.username
-        token['is_admin'] = True
-        return token
 
-    def validate(self, attrs):
-        email = attrs.get("username")
-        password = attrs.get("password")
+class AdminLoginView(APIView):
+    permission_classes = [AllowAny]
 
-        try:
-            user = AdminUser.objects.get(email=email)
-        except AdminUser.DoesNotExist:
-            raise Exception("Invalid credentials")
-
-        if not check_password(password, user.password_hash):
-            raise Exception("Invalid credentials")
-
-
-        from django.contrib.auth.models import AnonymousUser
-        dummy_user = AnonymousUser()
-        dummy_user.id = user.id
-        dummy_user.username = user.username
-        dummy_user.is_staff = True
-        dummy_user.is_superuser = True
-
-        data = super().validate({
-            "username": dummy_user.username,
-            "password": password
-        })
-        data["user"] = {
-            "id": user.id,
-            "email": user.email,
-            "username": user.username,
-            "is_admin": True
-        }
-        return data
-
-
-class AdminLoginView(TokenObtainPairView):
-    serializer_class = AdminLoginSerializer
-
-class AdminTokenObtainPairView(TokenObtainPairView):
-    serializer_class = AdminTokenObtainPairSerializer
+    def post(self, request, *args, **kwargs):
+        serializer = AdminLoginSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        return Response(serializer.validated_data, status=200)
 
 
 # -----------------------------

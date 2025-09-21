@@ -36,10 +36,8 @@ urlpatterns = [
 
     path("api/requests/", include(requests_urls)),
     path("api/responses/", ResponseCreateView.as_view(), name="response-create"),
-    path("api/token/", TokenObtainPairView.as_view(), name="token_obtain_pair"),
     path("api/token/refresh/", CustomTokenRefreshView.as_view(), name="token_refresh"),
     path('api/admin/login/', AdminLoginView.as_view(), name='admin-login'),
-    path('api/admin/token/refresh/', TokenRefreshView.as_view(), name='admin_token_refresh'),
     path("api/offers/", OfferCreateView.as_view(), name="offer-create"),
     path("api/users/login-via-request/", UserLoginViaRequestView.as_view(), name="user-login-via-request"),
     path("api/users/requests/", UserRequestsView.as_view(), name="user-requests"),
