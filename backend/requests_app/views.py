@@ -36,7 +36,6 @@ from .utils import get_tokens_for_request_user
 from django.views.generic import TemplateView
 from rest_framework.decorators import api_view
 
-
 class PublicRequestCreateView(generics.CreateAPIView):
     queryset = Requests.objects.all()
     serializer_class = RequestSerializer
@@ -374,3 +373,5 @@ def debug_admin_login(request):
         "found": True,
         "check_password": check_password(password, admin.password_hash)
     })
+
+

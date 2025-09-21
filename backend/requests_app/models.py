@@ -12,6 +12,7 @@ class AdminUser(models.Model):
     def __str__(self):
         return self.username
 
+
     class Meta:
         db_table = 'admin_users'
 

@@ -19,7 +19,6 @@ from django.contrib import admin
 from requests_app.views import debug_admin_login
 
 
-
 def root(request):
     return JsonResponse({
         "api_root": "/api/",
