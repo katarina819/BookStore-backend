@@ -5,7 +5,7 @@ from .models import RequestUser
 from .models import RequestUser, Requests
 from django.contrib.auth import get_user_model
 from rest_framework_simplejwt.exceptions import InvalidToken
-
+from .models import Requests, AdminUser
 
 User = get_user_model()
 
@@ -47,11 +47,19 @@ class OptionalJWTAuthentication(BaseAuthentication):
 
 class CustomJWTAuthentication(JWTAuthentication):
     def get_user(self, validated_token):
+        """
+        Dohvati korisnika iz tokena, podržava RequestUser, AdminUser i Django User.
+        """
         if validated_token.get("is_request_user"):
             try:
                 return Requests.objects.get(id=validated_token["user_id"])
             except Requests.DoesNotExist:
                 raise InvalidToken("Request user not found")
+        elif validated_token.get("is_admin"):
+            try:
+                return AdminUser.objects.get(id=validated_token["user_id"])
+            except AdminUser.DoesNotExist:
+                raise InvalidToken("Admin user not found")
         else:
             try:
                 return User.objects.get(id=validated_token["user_id"])

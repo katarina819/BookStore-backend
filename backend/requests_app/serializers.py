@@ -102,10 +102,6 @@ class OfferImageSerializer(serializers.ModelSerializer):
         return ''
 
 
-
-
-
-
 class OfferSerializer(serializers.ModelSerializer):
     images = OfferImageSerializer(many=True, read_only=True)
     request = serializers.PrimaryKeyRelatedField(
@@ -118,9 +114,6 @@ class OfferSerializer(serializers.ModelSerializer):
             'id', 'request', 'type', 'city', 'address',
             'price', 'description', 'images'
         ]
-
-
-
 
 
 class AdminLoginSerializer(serializers.Serializer):
@@ -139,21 +132,9 @@ class AdminLoginSerializer(serializers.Serializer):
         if not check_password(password, admin.password_hash):
             raise serializers.ValidationError({"detail": "Invalid credentials"})
 
-        # Dummy user koji SimpleJWT može koristiti
-        class DummyAdminUser:
-            def __init__(self, admin):
-                self.id = admin.id
-                self.username = admin.username
-                self.is_active = True
-                self.is_staff = True
-                self.is_superuser = True
-                self._password_hash = admin.password_hash
-
-            def check_password(self, raw_password):
-                return check_password(raw_password, self._password_hash)
-
-        dummy_user = DummyAdminUser(admin)
-        refresh = RefreshToken.for_user(dummy_user)
+        # Generiraj JWT token s is_admin claimom
+        refresh = RefreshToken.for_user(admin)
+        refresh["is_admin"] = True
 
         return {
             "refresh": str(refresh),
