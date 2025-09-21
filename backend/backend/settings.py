@@ -41,7 +41,7 @@ CORS_ALLOWED_ORIGINS = [
     "http://localhost:58304",
 ]
 
-CORS_ALLOW_ALL_ORIGINS = True   # za testiranje, kasnije ograniči
+
 
 CORS_ALLOW_METHODS = [
     "DELETE",
