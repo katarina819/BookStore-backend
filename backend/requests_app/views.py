@@ -15,7 +15,7 @@ from .serializers import (
     OfferSerializer,
     OfferImageSerializer,
     RequestDetailSerializer,
-    CustomTokenRefreshSerializer
+    CustomTokenRefreshSerializer,
 )
 from django.contrib.auth.hashers import check_password
 from datetime import datetime, timedelta
@@ -35,6 +35,9 @@ from rest_framework_simplejwt.views import TokenViewBase
 from .utils import get_tokens_for_request_user
 from django.views.generic import TemplateView
 from rest_framework.decorators import api_view
+from .authentication import CustomJWTAuthentication
+
+
 
 class PublicRequestCreateView(generics.CreateAPIView):
     queryset = Requests.objects.all()
@@ -71,7 +74,7 @@ class RequestsListView(generics.ListAPIView):
     queryset = Requests.objects.all().prefetch_related('responses')
     serializer_class = AdminRequestSerializer
     permission_classes = [IsAdminUser]
-    authentication_classes = [JWTAuthentication]
+    authentication_classes = [CustomJWTAuthentication]
 
 
 class ResponseCreateView(generics.CreateAPIView):
@@ -202,33 +205,26 @@ class AdminLoginView(APIView):
 
         print(f"DEBUG: Login successful for {email}")
 
+        refresh = RefreshToken.for_user(user)
 
-        # Generiranje access tokena (5 minuta)
-        access_payload = {
-            "user_id": user.id,
-            "username": user.username,
-            "exp": datetime.utcnow() + timedelta(minutes=5),
-        }
-        access_token = jwt.encode(access_payload, settings.SECRET_KEY, algorithm="HS256")
+        # Dodaj custom claimove
+        refresh["user_id"] = user.id
+        refresh["username"] = user.username
+        refresh["is_admin"] = True
 
-        # Generiranje refresh tokena (7 dana)
-        refresh_payload = {
-            "user_id": user.id,
-            "username": user.username,
-            "exp": datetime.utcnow() + timedelta(days=7),
-        }
-        refresh_token = jwt.encode(refresh_payload, settings.SECRET_KEY, algorithm="HS256")
+        # Dohvati access token iz refresha
+        access = refresh.access_token
 
         return Response({
-            "access": access_token,
-            "refresh": refresh_token,
+            "access": str(access),
+            "refresh": str(refresh),
             "user": {
                 "id": user.id,
                 "email": user.email,
                 "username": user.username,
-                "is_admin": True  # Dodano!
+                "is_admin": True
             }
-        }, status=status.HTTP_200_OK)
+        })
 
 
 # -----------------------------

@@ -12,6 +12,14 @@ class AdminUser(models.Model):
     def __str__(self):
         return self.username
 
+    @property
+    def id(self):
+        return self.pk
+
+    @property
+    def is_active(self):
+        return True
+
 
     class Meta:
         db_table = 'admin_users'
