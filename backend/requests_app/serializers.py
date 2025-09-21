@@ -135,14 +135,12 @@ class AdminLoginSerializer(serializers.Serializer):
         if not check_password(password, admin.password_hash):
             raise serializers.ValidationError({"detail": "Invalid credentials"})
 
-        # --- ručno generiranje tokena ---
-        refresh = RefreshToken()
-        refresh.set_exp(lifetime=timedelta(days=7))  # npr. 7 dana
-        refresh["user_id"] = admin.id
-        refresh["is_admin"] = True
-
+        # ✅ veza tokena s korisnikom
+        refresh = RefreshToken.for_user(admin)
         access = refresh.access_token
-        access["user_id"] = admin.id
+
+        # Dodaj custom claimove ako želiš
+        refresh["is_admin"] = True
         access["is_admin"] = True
 
         return {
