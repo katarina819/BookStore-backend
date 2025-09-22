@@ -10,7 +10,7 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from django.conf import settings
 from rest_framework_simplejwt.serializers import TokenRefreshSerializer
 from datetime import timedelta
-
+import bcrypt
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -132,8 +132,8 @@ class AdminLoginSerializer(serializers.Serializer):
         except AdminUser.DoesNotExist:
             raise serializers.ValidationError({"detail": "Invalid credentials"})
 
-        if not check_password(password, admin.password_hash):
-            raise serializers.ValidationError({"detail": "Invalid credentials"})
+        if not bcrypt.checkpw(password.encode(), admin.password_hash.encode()):
+            raise serializers.ValidationError({"detail": "❌ Pogrešan email ili lozinka"})
 
         refresh = RefreshToken.for_user(admin)
 
