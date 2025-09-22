@@ -45,12 +45,12 @@ class Requests(models.Model):
         return f"{self.name} {self.surname}"
 
     def set_password(self, raw_password):
-        """Hashira lozinku i sprema je u model"""
+        """Hash the password and stores it in the model"""
         self.password = make_password(raw_password)
         self.save(update_fields=['password'])
 
     def check_password(self, raw_password):
-        """Provjerava unesenu lozinku s hashiranim passwordom"""
+        """Checks the entered password with the hashed password"""
         return check_password(raw_password, self.password)
 
     @property
@@ -173,7 +173,7 @@ class RequestUser(models.Model):
 
     @property
     def is_authenticated(self):
-        return True  # ovo je ključno za DRF IsAuthenticated permission
+        return True
 
     def set_password(self, raw_password):
         self.password = make_password(raw_password)

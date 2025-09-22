@@ -89,9 +89,9 @@ class OfferImageSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = OfferImage
-        fields = ['offer', 'image_url', 'image', 'full_image_url']  # <-- dodaj 'offer'
+        fields = ['offer', 'image_url', 'image', 'full_image_url']
         extra_kwargs = {
-            'offer': {'required': True},  # osiguraj da ne može biti null
+            'offer': {'required': True},
         }
 
     def get_full_image_url(self, obj):
@@ -133,7 +133,7 @@ class AdminLoginSerializer(serializers.Serializer):
             raise serializers.ValidationError({"detail": "Invalid credentials"})
 
         if not bcrypt.checkpw(password.encode(), admin.password_hash.encode()):
-            raise serializers.ValidationError({"detail": "❌ Pogrešan email ili lozinka"})
+            raise serializers.ValidationError({"detail": "❌ Incorrect email or password"})
 
         refresh = RefreshToken.for_user(admin)
 
@@ -170,7 +170,7 @@ class RequestDetailSerializer(serializers.ModelSerializer):
     def get_serializer_context(self):
         context = super().get_serializer_context()
         if 'request' in self.context:
-            context['request'] = self.context['request']  # važno za OfferImageSerializer
+            context['request'] = self.context['request']
         return context
 
 
@@ -186,10 +186,10 @@ class CustomTokenRefreshSerializer(TokenRefreshSerializer):
     def validate(self, attrs):
         refresh = RefreshToken(attrs['refresh'])
 
-        # napravi novi access token bez traženja Usera
+
         data = {'access': str(refresh.access_token)}
 
-        # ako želiš, vrati i user podatke iz claimova
+
         data['user'] = {
             "id": refresh.get("user_id"),
             "email": refresh.get("email"),

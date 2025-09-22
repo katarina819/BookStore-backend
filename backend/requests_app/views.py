@@ -187,16 +187,16 @@ class AdminLoginView(APIView):
         password = request.data.get("password")
 
         if not email or not password:
-            return Response({"error": "Email i lozinka su obavezni."}, status=400)
+            return Response({"error": "Email and password are required."}, status=400)
 
         try:
             user = AdminUser.objects.get(email=email)
         except AdminUser.DoesNotExist:
-            return Response({"error": "❌ Pogrešan email ili lozinka."}, status=401)
+            return Response({"error": "❌ Incorrect email or password."}, status=401)
 
         # Provjera bcrypt hasha
         if not bcrypt.checkpw(password.encode(), user.password_hash.encode()):
-            return Response({"error": "❌ Pogrešan email ili lozinka."}, status=401)
+            return Response({"error": "❌ Incorrect email or password."}, status=401)
 
         refresh = RefreshToken.for_user(user)
         refresh["user_id"] = user.id

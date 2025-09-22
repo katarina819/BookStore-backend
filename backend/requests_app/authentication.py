@@ -48,7 +48,7 @@ class OptionalJWTAuthentication(BaseAuthentication):
 class CustomJWTAuthentication(JWTAuthentication):
     def get_user(self, validated_token):
         """
-        Dohvati korisnika iz tokena, podržava RequestUser, AdminUser i Django User.
+        Get user from token, supports RequestUser, AdminUser and Django User
         """
         if validated_token.get("is_request_user"):
             try:
