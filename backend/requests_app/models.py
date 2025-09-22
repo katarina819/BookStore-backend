@@ -6,6 +6,7 @@ class AdminUser(models.Model):
     username = models.CharField(max_length=150, unique=True)
     password_hash = models.TextField()
     email = models.CharField(max_length=255, blank=True, null=True)
+    is_admin = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
     last_login = models.DateTimeField(blank=True, null=True)
 
@@ -19,7 +20,6 @@ class AdminUser(models.Model):
     @property
     def is_active(self):
         return True
-
 
     class Meta:
         db_table = 'admin_users'

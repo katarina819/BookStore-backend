@@ -37,6 +37,7 @@ from django.views.generic import TemplateView
 from rest_framework.decorators import api_view
 from .authentication import CustomJWTAuthentication
 import bcrypt
+from .permissions import IsAdminCustom
 
 
 class PublicRequestCreateView(generics.CreateAPIView):
@@ -73,13 +74,13 @@ class TimeRequestCreateView(generics.CreateAPIView):
 class RequestsListView(generics.ListAPIView):
     queryset = Requests.objects.all().prefetch_related('responses')
     serializer_class = AdminRequestSerializer
-    permission_classes = [IsAdminUser]
+    permission_classes = [IsAdminCustom]
     authentication_classes = [CustomJWTAuthentication]
 
 
 class ResponseCreateView(generics.CreateAPIView):
     serializer_class = ResponseSerializer
-    permission_classes = [IsAdminUser]
+    permission_classes = [IsAdminCustom]
     authentication_classes = [JWTAuthentication]
 
     def perform_create(self, serializer):
@@ -101,7 +102,7 @@ class ResponseCreateView(generics.CreateAPIView):
 
 class OfferCreateView(generics.CreateAPIView):
     serializer_class = OfferSerializer
-    permission_classes = [IsAdminUser]
+    permission_classes = [IsAdminCustom]
     authentication_classes = [JWTAuthentication]
 
     def perform_create(self, serializer):
@@ -115,7 +116,7 @@ class OfferCreateView(generics.CreateAPIView):
 
 class OfferImageCreateView(generics.CreateAPIView):
     serializer_class = OfferImageSerializer
-    permission_classes = [IsAdminUser]
+    permission_classes = [IsAdminCustom]
     authentication_classes = [JWTAuthentication]
     parser_classes = [MultiPartParser, FormParser]
 
@@ -300,7 +301,7 @@ class RequestDetailView(generics.RetrieveAPIView):
     authentication_classes = [JWTAuthentication]
 
 class OfferWithImagesCreateView(APIView):
-    permission_classes = [IsAdminUser]
+    permission_classes = [IsAdminCustom]
     authentication_classes = [JWTAuthentication]
     parser_classes = [MultiPartParser, FormParser]
 
