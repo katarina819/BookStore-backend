@@ -197,16 +197,13 @@ class AdminLoginView(APIView):
         if not bcrypt.checkpw(password.encode(), user.password_hash.encode()):
             return Response({"error": "❌ Pogrešan email ili lozinka."}, status=401)
 
-        # Generiranje JWT tokena
         refresh = RefreshToken.for_user(user)
         refresh["user_id"] = user.id
         refresh["username"] = user.username
         refresh["is_admin"] = True
 
-        access = refresh.access_token
-
         return Response({
-            "access": str(access),
+            "access": str(refresh.access_token),
             "refresh": str(refresh),
             "user": {
                 "id": user.id,
@@ -215,7 +212,6 @@ class AdminLoginView(APIView):
                 "is_admin": True
             }
         })
-
 # -----------------------------
 # User endpoints (login via request)
 # -----------------------------
