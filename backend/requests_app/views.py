@@ -36,7 +36,7 @@ from .utils import get_tokens_for_request_user
 from django.views.generic import TemplateView
 from rest_framework.decorators import api_view
 from .authentication import CustomJWTAuthentication
-
+import bcrypt
 
 
 class PublicRequestCreateView(generics.CreateAPIView):
@@ -184,35 +184,25 @@ class AdminLoginView(APIView):
     def post(self, request):
         email = request.data.get("email")
         password = request.data.get("password")
-        print(f"DEBUG: Received login attempt for {email}")
 
         if not email or not password:
-            print("DEBUG: Missing email or password")
             return Response({"error": "Email i lozinka su obavezni."}, status=400)
-
-        print(f"DEBUG: Trying login for {email}")
 
         try:
             user = AdminUser.objects.get(email=email)
-            print(f"DEBUG: User found: {user.email}")
         except AdminUser.DoesNotExist:
-            print(f"DEBUG: No user found with email {email}")
             return Response({"error": "❌ Pogrešan email ili lozinka."}, status=401)
 
-        if not check_password(password, user.password_hash):
-            print(f"DEBUG: Password incorrect for {email}")
+        # Provjera bcrypt hasha
+        if not bcrypt.checkpw(password.encode(), user.password_hash.encode()):
             return Response({"error": "❌ Pogrešan email ili lozinka."}, status=401)
 
-        print(f"DEBUG: Login successful for {email}")
-
+        # Generiranje JWT tokena
         refresh = RefreshToken.for_user(user)
-
-        # Dodaj custom claimove
         refresh["user_id"] = user.id
         refresh["username"] = user.username
         refresh["is_admin"] = True
 
-        # Dohvati access token iz refresha
         access = refresh.access_token
 
         return Response({
@@ -225,7 +215,6 @@ class AdminLoginView(APIView):
                 "is_admin": True
             }
         })
-
 
 # -----------------------------
 # User endpoints (login via request)
