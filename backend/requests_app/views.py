@@ -302,7 +302,7 @@ class RequestDetailView(generics.RetrieveAPIView):
 
 class OfferWithImagesCreateView(APIView):
     permission_classes = [IsAdminCustom]
-    authentication_classes = [JWTAuthentication]
+    authentication_classes = [CustomJWTAuthentication]
     parser_classes = [MultiPartParser, FormParser]
 
     def post(self, request, *args, **kwargs):
