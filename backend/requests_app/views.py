@@ -376,8 +376,8 @@ class UserPayOfferView(APIView):
 class AdminRequestDetailView(generics.RetrieveDestroyAPIView):
     queryset = Requests.objects.all()
     serializer_class = AdminRequestSerializer
-    permission_classes = [permissions.IsAdminUser]
-    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAdminCustom]
+    authentication_classes = [CustomJWTAuthentication]
 
 
 class CustomTokenRefreshView(TokenViewBase):
