@@ -229,7 +229,7 @@ class UserLoginViaRequestView(APIView):
         except Requests.DoesNotExist:
             return Response({"error": "Invalid credentials"}, status=status.HTTP_401_UNAUTHORIZED)
 
-        if not check_password(password, request_obj.password):
+        if not bcrypt.checkpw(password.encode(), request_obj.password.encode()):
             return Response({"error": "Invalid credentials"}, status=status.HTTP_401_UNAUTHORIZED)
 
 
