@@ -4,6 +4,7 @@ import dj_database_url
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+FRONTEND_URL = os.environ.get('FRONTEND_URL', 'http://localhost:4200')
 
 SECRET_KEY = 'zr9&f55!tg^zvq2)3n#1s^i14myb32odpd&_tw0adj@q+!=m_3'
 DEBUG = True
@@ -37,8 +38,9 @@ MIDDLEWARE = [
 
 
 CORS_ALLOWED_ORIGINS = [
-    "https://bookstay-accommodation.netlify.app",
+     FRONTEND_URL,
     "http://localhost:39553",
+    "https://bookstay-accommodation.netlify.app",
 ]
 
 
