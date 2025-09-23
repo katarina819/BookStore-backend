@@ -300,8 +300,8 @@ class RequestDetailView(generics.RetrieveAPIView):
         'relocations', 'time_requests', 'responses', 'offers'
     )
     serializer_class = RequestDetailSerializer
-    permission_classes = [permissions.IsAuthenticated, IsAdminUser]
-    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAdminCustom]
+    authentication_classes = [CustomJWTAuthentication]
 
 class OfferWithImagesCreateView(APIView):
     permission_classes = [IsAdminCustom]
