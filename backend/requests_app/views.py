@@ -38,6 +38,9 @@ from rest_framework.decorators import api_view
 from .authentication import CustomJWTAuthentication
 import bcrypt
 from .permissions import IsAdminCustom
+from rest_framework import viewsets
+from .permissions import IsRequestOwnerOrAdmin
+
 
 
 class PublicRequestCreateView(generics.CreateAPIView):
@@ -399,5 +402,8 @@ class AdminTokenObtainPairView(TokenObtainPairView):
     serializer_class = AdminTokenObtainPairSerializer
 
 
-
+class RequestsViewSet(viewsets.ModelViewSet):
+    queryset = Requests.objects.all()
+    serializer_class = RequestSerializer
+    permission_classes = [IsAuthenticated, IsRequestOwnerOrAdmin]
 
