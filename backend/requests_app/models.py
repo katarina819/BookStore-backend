@@ -21,6 +21,10 @@ class AdminUser(models.Model):
     def is_active(self):
         return True
 
+    @property
+    def is_admin(self):
+        return True
+
     class Meta:
         db_table = 'admin_users'
 
