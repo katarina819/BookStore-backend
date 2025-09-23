@@ -81,7 +81,7 @@ class RequestsListView(generics.ListAPIView):
 class ResponseCreateView(generics.CreateAPIView):
     serializer_class = ResponseSerializer
     permission_classes = [IsAdminCustom]
-    authentication_classes = [CustomJWTAuthentication]
+    authentication_classes = [JWTAuthentication]
 
     def perform_create(self, serializer):
         req_id = self.request.data.get("request_id")
