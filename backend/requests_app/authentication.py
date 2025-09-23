@@ -20,10 +20,9 @@ class RequestUserJWTAuthentication(JWTAuthentication):
             raise exceptions.AuthenticationFailed("Token missing user_id")
 
         try:
-            return Requests.objects.get(id=user_id)
+            return Requests.objects.get(id=int(user_id))
         except Requests.DoesNotExist:
             raise exceptions.AuthenticationFailed("Invalid token for request user")
-
 
 
 # -----------------------------
