@@ -202,11 +202,3 @@ class CustomTokenRefreshSerializer(TokenRefreshSerializer):
         return data
 
 
-class AdminTokenObtainPairSerializer(TokenObtainPairSerializer):
-    @classmethod
-    def get_token(cls, user):
-        token = super().get_token(user)
-        # custom claims
-        token['username'] = user.username
-        token['is_admin'] = True
-        return token
