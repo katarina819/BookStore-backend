@@ -95,14 +95,14 @@ class OfferImageSerializer(serializers.ModelSerializer):
         }
 
     def get_full_image_url(self, obj):
-        request = self.context.get('request', None)
-        if obj.image:
-            if request:
+        request = self.context.get('request')
+        if obj.image:  # Cloudinary ili lokalni ImageField
+            if request:  # puni URL za frontend
                 return request.build_absolute_uri(obj.image.url)
-            return settings.MEDIA_URL + str(obj.image)
-        elif obj.image_url:
+            return obj.image.url
+        elif obj.image_url:  # eksterni URL
             return obj.image_url
-        return ''
+        return ''  # fallback
 
 
 class OfferSerializer(serializers.ModelSerializer):
