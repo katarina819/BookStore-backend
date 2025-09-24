@@ -357,23 +357,31 @@ class UserPayOfferView(APIView):
     def post(self, request):
         offer_id = request.data.get("offer_id")
         if not offer_id:
-            return DRFResponse({"error": "Offer ID is required"}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"error": "Offer ID is required"}, status=status.HTTP_400_BAD_REQUEST)
 
         try:
             offer = Offer.objects.get(id=offer_id)
-            request_obj = offer.request
         except Offer.DoesNotExist:
-            return DRFResponse({"error": "Offer not found"}, status=status.HTTP_404_NOT_FOUND)
+            return Response({"error": "Offer not found"}, status=status.HTTP_404_NOT_FOUND)
 
-        # Create a Response for the notification
+        # Provjera ownershipa: offer mora pripadati requestu iz tokena
+        if offer.request.id != request.user.id:
+            return Response(
+                {"error": "You are not authorized to pay for this offer"},
+                status=status.HTTP_403_FORBIDDEN
+            )
+
+        # Kreiraj Response za notifikaciju adminu
         ResponseModel.objects.create(
-            request=request_obj,
+            request=offer.request,
             admin=None,
             message="User has paid this offer!"
-
         )
 
-        return DRFResponse({"success": "Payment recorded and admin notified"}, status=status.HTTP_201_CREATED)
+        return Response(
+            {"success": "Payment recorded and admin notified"},
+            status=status.HTTP_201_CREATED
+        )
 
 
 class AdminRequestDetailView(generics.RetrieveDestroyAPIView):
