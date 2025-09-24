@@ -89,26 +89,15 @@ class OfferImageSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = OfferImage
-        fields = ['offer', 'image_url', 'image', 'full_image_url']
-        extra_kwargs = {
-            'offer': {'required': True},
-        }
+        fields = ['offer', 'image', 'full_image_url']
 
     def get_full_image_url(self, obj):
-        """
-        Vraća pravi URL za frontend:
-        - U produkciji: uvijek Cloudinary (image_url)
-        - U developmentu: lokalni ImageField ako postoji, inače Cloudinary
-        """
-        if obj.image_url:
-            return obj.image_url  # produkcija ili Cloudinary URL
-        elif settings.DEBUG and obj.image:
-            # lokalni fajl samo u developmentu
+        # uvijek vraća Cloudinary URL
+        if obj.image:
             request = self.context.get('request')
-            if request:
-                return request.build_absolute_uri(obj.image.url)
-            return obj.image.url
-        return ''
+            # Ako želiš apsolutni URL:
+            return request.build_absolute_uri(obj.image.url) if request else obj.image.url
+        return ""
 
 
 

@@ -1,5 +1,6 @@
 from django.db import models
 from django.contrib.auth.hashers import make_password, check_password
+from cloudinary_storage.storage import MediaCloudinaryStorage
 
 
 class AdminUser(models.Model):
@@ -131,8 +132,11 @@ class Offer(models.Model):
 
 class OfferImage(models.Model):
     offer = models.ForeignKey(Offer, on_delete=models.CASCADE, related_name='images')
-    image = models.ImageField(upload_to='offer_images/')
-    image_url = models.URLField(blank=True, null=True)
+    # Cloudinary storage osigurava da se slika sprema u Cloudinary i vraća pun URL
+    image = models.ImageField(
+        upload_to='offer_images/',
+        storage=MediaCloudinaryStorage()
+    )
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
