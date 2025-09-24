@@ -415,3 +415,7 @@ class RequestsViewSet(viewsets.ModelViewSet):
     serializer_class = RequestSerializer
     permission_classes = [IsAuthenticated, IsRequestOwnerOrAdmin]
 
+
+class AdminLoginView(TokenObtainPairView):
+    serializer_class = AdminTokenObtainPairSerializer
+
