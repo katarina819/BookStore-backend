@@ -95,14 +95,21 @@ class OfferImageSerializer(serializers.ModelSerializer):
         }
 
     def get_full_image_url(self, obj):
-        request = self.context.get('request')
-        if obj.image:  # Cloudinary ili lokalni ImageField
-            if request:  # puni URL za frontend
+        """
+        Vraća pravi URL za frontend:
+        - U produkciji: uvijek Cloudinary (image_url)
+        - U developmentu: lokalni ImageField ako postoji, inače Cloudinary
+        """
+        if obj.image_url:
+            return obj.image_url  # produkcija ili Cloudinary URL
+        elif settings.DEBUG and obj.image:
+            # lokalni fajl samo u developmentu
+            request = self.context.get('request')
+            if request:
                 return request.build_absolute_uri(obj.image.url)
             return obj.image.url
-        elif obj.image_url:  # eksterni URL
-            return obj.image_url
-        return ''  # fallback
+        return ''
+
 
 
 class OfferSerializer(serializers.ModelSerializer):
