@@ -40,7 +40,7 @@ urlpatterns = [
     path('api/admin/login/', AdminLoginView.as_view(), name='admin-login'),
     path("api/offers/", OfferCreateView.as_view(), name="offer-create"),
     path("api/users/login-via-request/", UserLoginViaRequestView.as_view(), name="user-login-via-request"),
-    path("api/users/requests/", UserRequestsView.as_view(), name="user-requests")
+    path("api/users/requests/", UserRequestsView.as_view(), name="user-requests"),
     path("api/users/token/refresh/", RequestUserTokenRefreshView.as_view(), name="request-user-token-refresh"),
 ]
 
