@@ -21,6 +21,8 @@ INSTALLED_APPS = [
     'corsheaders',
     'rest_framework',
     'requests_app',
+    'cloudinary',
+    'cloudinary_storage',
 ]
 
 
@@ -141,6 +143,9 @@ STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
 
+CLOUDINARY_URL = os.environ.get("CLOUDINARY_URL")
+# Cloudinary postavke
+DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
 
 
 # settings.py
