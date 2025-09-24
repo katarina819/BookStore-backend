@@ -416,25 +416,3 @@ class RequestsViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated, IsRequestOwnerOrAdmin]
 
 
-
-class RequestUserTokenRefreshView(TokenViewBase):
-    """
-    Custom refresh view for Requests users.
-    """
-    def post(self, request, *args, **kwargs):
-        refresh_token = request.data.get("refresh")
-        if not refresh_token:
-            return Response({"error": "Refresh token is required"}, status=status.HTTP_400_BAD_REQUEST)
-
-        try:
-            refresh = RefreshToken(refresh_token)
-            # Add claim for request user
-            refresh.access["is_request_user"] = True
-
-            return Response({
-                "access": str(refresh.access_token),
-                "refresh": str(refresh)
-            }, status=status.HTTP_200_OK)
-
-        except Exception as e:
-            return Response({"error": "Invalid refresh token"}, status=status.HTTP_401_UNAUTHORIZED)
